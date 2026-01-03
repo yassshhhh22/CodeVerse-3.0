@@ -12,6 +12,8 @@ class MetadataBuilder:
     
     def __init__(self):
         self.camera_id = CAMERA_CONFIG["camera_id"]
+        self.frame_width = CAMERA_CONFIG["frame_width"]
+        self.frame_height = CAMERA_CONFIG["frame_height"]
     
     def build(self, detections, timestamp):
         """
@@ -28,7 +30,9 @@ class MetadataBuilder:
             "camera_id": self.camera_id,
             "detections": detections,
             "timestamp": timestamp,
-            "detection_count": len(detections)
+            "detection_count": len(detections),
+            "frame_width": self.frame_width,
+            "frame_height": self.frame_height
         }
         
         return metadata

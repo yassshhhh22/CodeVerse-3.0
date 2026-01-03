@@ -1,4 +1,5 @@
 import Venue from "../models/Venue.js";
+import User from "../models/User.js";
 import Zone from "../models/Zone.js";
 import DensityLog from "../models/DensityLog.js";
 import logger from "../config/logger.js";
@@ -28,14 +29,37 @@ export const setupCVMetadataHandler = (io) => {
 };
 
 const handleCVMetadata = async (metadata) => {
-  const { camera_id, detections, timestamp, detection_count } = metadata;
+  const { camera_id, detections, timestamp, detection_count, frame_width, frame_height } = metadata;
 
   logger.info(`Received metadata from ${camera_id}: ${detection_count} detections`);
 
-  const venue = await Venue.findOne({ camera_id });
+  // Auto-register venue if it doesn't exist
+  let venue = await Venue.findOne({ camera_id });
+  
   if (!venue) {
-    logger.error(`Venue not found for camera: ${camera_id}`);
-    return;
+    logger.info(`Auto-registering new venue for camera: ${camera_id}`);
+    
+    // Get first admin user as creator
+    const adminUser = await User.findOne({ role: "admin" }).sort({ createdAt: 1 });
+    
+    if (!adminUser) {
+      logger.error("No admin user found. Cannot auto-register venue.");
+      return;
+    }
+
+    venue = await Venue.create({
+      camera_id,
+      name: `Camera ${camera_id}`,
+      frame_width: frame_width || 1280,
+      frame_height: frame_height || 720,
+      grid_rows: 50,
+      grid_cols: 50,
+      status: "active",
+      created_by: adminUser._id,
+      last_metadata_time: new Date(),
+    });
+
+    logger.info(`✓ Venue auto-registered: ${venue.name} (${venue._id})`);
   }
 
   await updateLastMetadataTime(venue._id);

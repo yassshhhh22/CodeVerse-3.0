@@ -29,15 +29,15 @@ class CrowdMonitoringApp:
         if video_source is not None:
             CAMERA_CONFIG["source"] = video_source
         
-        print("\n[1/4] Initializing video reader...")
-        
+        print("\n[0/5] Registering camera with backend...")
+        self.regis1/4] Initializing video reader...")
         self.video_reader = VideoReader()
         print("[2/4] Loading YOLOv8 model...")
         self.detector = PersonDetector()
         print("[3/4] Building metadata pipeline...")
         self.metadata_builder = MetadataBuilder()
         print("[4/4] Preparing WebSocket connection...")
-        self.streamer = WebSocketStreamer()
+        print("    (Venue will auto-register on first metadata send)
         
         # Frame processing settings
         self.frame_skip = CAMERA_CONFIG["frame_skip"]
