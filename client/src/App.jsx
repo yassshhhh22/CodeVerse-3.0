@@ -1,5 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/AuthStore";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
 import "./App.css";
 
 function App() {
@@ -7,19 +10,12 @@ function App() {
 
   return (
     <BrowserRouter>
-      <div className="min-h-screen min-w-screen bg-gray-900">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <div className="flex items-center justify-center h-screen text-white text-3xl font-bold">
-                Welcome to Hackathon
-              </div>
-            }
-          />
-          {!user && <Route path="*" element={<Navigate to="/" replace />} />}
-        </Routes>
-      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        {!user && <Route path="*" element={<Navigate to="/" replace />} />}
+      </Routes>
     </BrowserRouter>
   );
 }
