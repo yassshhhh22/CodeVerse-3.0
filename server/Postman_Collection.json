@@ -1,0 +1,1010 @@
+{
+  "info": {
+    "name": "Crowd Monitoring System API",
+    "description": "Complete API collection for crowd monitoring system with real-time density tracking, zone management, threshold alerts, and analytics",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "venue_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "zone_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "alert_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "After registration, manually update user role to 'admin' in MongoDB:\ndb.users.updateOne({email: 'admin@example.com'}, {$set: {role: 'admin'}})"
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('token', jsonData.token);",
+                  "    pm.collectionVariables.set('token', jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"bio\": \"Software Developer\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/updatedetails",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "updatedetails"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"admin123\",\n  \"newPassword\": \"newpass456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/updatepassword",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "updatepassword"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2. Venues",
+      "item": [
+        {
+          "name": "Create Venue (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('venue_id', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"camera_id\": \"CAM_01\",\n  \"name\": \"Central Station Entrance\",\n  \"frame_width\": 1280,\n  \"frame_height\": 720,\n  \"grid_rows\": 10,\n  \"grid_cols\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Venues",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Venue by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Venue (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Venue Name\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Venue (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3. Zones",
+      "item": [
+        {
+          "name": "Create Zone (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('zone_id', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Entrance Zone\",\n  \"grid_cells\": {\n    \"start\": { \"x\": 0, \"y\": 0 },\n    \"end\": { \"x\": 3, \"y\": 5 }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/zones",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "zones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zones by Venue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/zones",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "zones"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/zones/{{zone_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "zones", "{{zone_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Zone (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Main Entrance\",\n  \"grid_cells\": {\n    \"start\": { \"x\": 0, \"y\": 0 },\n    \"end\": { \"x\": 4, \"y\": 6 }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/zones/{{zone_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "zones", "{{zone_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Zone (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/zones/{{zone_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "zones", "{{zone_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4. Thresholds",
+      "item": [
+        {
+          "name": "Set Venue Threshold (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warning_level\": 25,\n  \"critical_level\": 40\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/thresholds/venue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "thresholds", "venue"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Zone Threshold (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warning_level\": 8,\n  \"critical_level\": 12\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/thresholds/zone/{{zone_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "thresholds", "zone", "{{zone_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Venue Thresholds",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/thresholds/venue",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "thresholds", "venue"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone Threshold",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/thresholds/zone/{{zone_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "thresholds", "zone", "{{zone_id}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "5. Grid Density",
+      "item": [
+        {
+          "name": "Get Current Grid Density",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/grid/density",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "grid", "density"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone Densities",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/grid/zone-densities",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "grid", "zone-densities"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "6. Alerts",
+      "item": [
+        {
+          "name": "Get All Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/alerts?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alerts"],
+              "query": [
+                {
+                  "key": "venue_id",
+                  "value": "{{venue_id}}",
+                  "disabled": true
+                },
+                {
+                  "key": "severity",
+                  "value": "critical",
+                  "disabled": true
+                },
+                {
+                  "key": "acknowledged",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Alerts by Venue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/alerts?venue_id={{venue_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alerts"],
+              "query": [
+                {
+                  "key": "venue_id",
+                  "value": "{{venue_id}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Critical Unacknowledged Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/alerts?severity=critical&acknowledged=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alerts"],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "critical"
+                },
+                {
+                  "key": "acknowledged",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Alert by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('alert_id', jsonData.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alerts", "{{alert_id}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Acknowledge Alert",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/alerts/{{alert_id}}/acknowledge",
+              "host": ["{{base_url}}"],
+              "path": ["api", "alerts", "{{alert_id}}", "acknowledge"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "7. Analytics",
+      "item": [
+        {
+          "name": "Get Venue Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/analytics?start_date=2026-01-01T00:00:00Z&end_date=2026-01-03T23:59:59Z&interval=hour",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "analytics"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01T00:00:00Z"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-01-03T23:59:59Z"
+                },
+                {
+                  "key": "interval",
+                  "value": "hour"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Zone Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/analytics/zone/{{zone_id}}?start_date=2026-01-01T00:00:00Z&end_date=2026-01-03T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "analytics", "zone", "{{zone_id}}"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2026-01-01T00:00:00Z"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2026-01-03T23:59:59Z"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Venue Report (Week)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/analytics/report?period=week",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "analytics", "report"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "week"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Venue Report (Day)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/analytics/report?period=day",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "analytics", "report"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "day"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Venue Report (Month)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/venues/{{venue_id}}/analytics/report?period=month",
+              "host": ["{{base_url}}"],
+              "path": ["api", "venues", "{{venue_id}}", "analytics", "report"],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "month"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "8. File Upload",
+      "item": [
+        {
+          "name": "Upload Single File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload/single",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload", "single"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Multiple Files",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload/multiple",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload", "multiple"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "9. Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
