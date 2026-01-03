@@ -43,7 +43,7 @@ export const getZonesByVenue = asyncHandler(async (req, res, next) => {
   }
 
   const zones = await Zone.find({ venue_id: venueId })
-    .populate("created_by", "name email")
+    .populate("created_by", "username email")
     .sort({ createdAt: -1 });
 
   res.status(HTTP_STATUS.OK).json(
@@ -54,7 +54,7 @@ export const getZonesByVenue = asyncHandler(async (req, res, next) => {
 export const getZoneById = asyncHandler(async (req, res, next) => {
   const zone = await Zone.findById(req.params.zoneId)
     .populate("venue_id")
-    .populate("created_by", "name email");
+    .populate("created_by", "username email");
 
   if (!zone) {
     throw ApiError.notFound("Zone not found");

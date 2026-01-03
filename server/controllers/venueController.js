@@ -29,7 +29,7 @@ export const createVenue = asyncHandler(async (req, res, next) => {
 
 export const getVenues = asyncHandler(async (req, res, next) => {
   const venues = await Venue.find()
-    .populate("created_by", "name email")
+    .populate("created_by", "username email")
     .sort({ createdAt: -1 });
 
   res.status(HTTP_STATUS.OK).json(
@@ -39,7 +39,7 @@ export const getVenues = asyncHandler(async (req, res, next) => {
 
 export const getVenueById = asyncHandler(async (req, res, next) => {
   const venue = await Venue.findById(req.params.id)
-    .populate("created_by", "name email");
+    .populate("created_by", "username email");
 
   if (!venue) {
     throw ApiError.notFound("Venue not found");
@@ -58,12 +58,12 @@ export const updateVenue = asyncHandler(async (req, res, next) => {
     throw ApiError.notFound("Venue not found");
   }
 
-  if (name) venue.name = name;
-  if (frame_width) venue.frame_width = frame_width;
-  if (frame_height) venue.frame_height = frame_height;
-  if (grid_rows) venue.grid_rows = grid_rows;
-  if (grid_cols) venue.grid_cols = grid_cols;
-  if (status) venue.status = status;
+  if (name !== undefined) venue.name = name;
+  if (frame_width !== undefined) venue.frame_width = frame_width;
+  if (frame_height !== undefined) venue.frame_height = frame_height;
+  if (grid_rows !== undefined) venue.grid_rows = grid_rows;
+  if (grid_cols !== undefined) venue.grid_cols = grid_cols;
+  if (status !== undefined) venue.status = status;
 
   await venue.save();
 

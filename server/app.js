@@ -15,7 +15,6 @@ import { RATE_LIMIT } from "./constants/index.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import uploadRoutes from "./routes/uploadRoutes.js";
 import venueRoutes from "./routes/venueRoutes.js";
 import zoneRoutes from "./routes/zoneRoutes.js";
 import thresholdRoutes from "./routes/thresholdRoutes.js";
@@ -66,7 +65,6 @@ app.use((req, res, next) => {
 });
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/upload", uploadRoutes);
 app.use("/api/venues", venueRoutes);
 app.use("/api/venues/:id/zones", zoneRoutes);
 app.use("/api/venues/:id/thresholds", thresholdRoutes);

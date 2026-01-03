@@ -1,7 +1,8 @@
 import Venue from "../models/Venue.js";
 import Zone from "../models/Zone.js";
+import DensityLog from "../models/DensityLog.js";
 import logger from "../config/logger.js";
-import { calculateGridDensity } from "../services/gridDensityService.js";
+import { calculateGridDensity, getTotalDensity, getMaxDensity } from "../services/gridDensityService.js";
 import { mapDetectionsToZones } from "../services/zoneGridService.js";
 import { saveGridDensity } from "../services/densityAggregationService.js";
 import { checkVenueThresholds, checkZoneThresholds, getVenueThreshold, getZoneThresholds } from "../services/thresholdService.js";
@@ -60,6 +61,48 @@ const handleCVMetadata = async (metadata) => {
   const aggregationWindow = getCurrentAggregationWindow();
   await saveGridDensity(venue._id, matrix, aggregationWindow);
 
+  // Store immediate venue analytics
+  const totalDensity = getTotalDensity(matrix);
+  const peakDensity = getMaxDensity(matrix);
+  
+  try {
+    await DensityLog.findOneAndUpdate(
+      { venue_id: venue._id, zone_id: null, time_window: aggregationWindow },
+      {
+        venue_id: venue._id,
+        zone_id: null,
+        time_window: aggregationWindow,
+        avg_density: totalDensity,
+        peak_density: peakDensity,
+        total_detections: totalDensity,
+      },
+      { upsert: true, new: true }
+    );
+  } catch (error) {
+    logger.error(`Error saving venue analytics: ${error.message}`);
+  }
+
+  // Store immediate zone analytics
+  for (const zoneId in zoneDensities) {
+    const zoneDensity = zoneDensities[zoneId];
+    try {
+      await DensityLog.findOneAndUpdate(
+        { venue_id: venue._id, zone_id: zoneDensity.zone_id, time_window: aggregationWindow },
+        {
+          venue_id: venue._id,
+          zone_id: zoneDensity.zone_id,
+          time_window: aggregationWindow,
+          avg_density: zoneDensity.count,
+          peak_density: zoneDensity.count,
+          total_detections: zoneDensity.count,
+        },
+        { upsert: true, new: true }
+      );
+    } catch (error) {
+      logger.error(`Error saving zone analytics for ${zoneDensity.zone_name}: ${error.message}`);
+    }
+  }
+
   emitToRoom(`venue_${camera_id}`, WEBSOCKET_EVENTS.GRID_DENSITY_UPDATE, {
     venue_id: venue._id,
     camera_id,
@@ -75,7 +118,6 @@ const handleCVMetadata = async (metadata) => {
   });
 
   const venueThreshold = await getVenueThreshold(venue._id);
-  const totalDensity = matrix.reduce((sum, row) => sum + row.reduce((a, b) => a + b, 0), 0);
   const venueViolation = checkVenueThresholds(totalDensity, venueThreshold);
 
   if (venueViolation) {

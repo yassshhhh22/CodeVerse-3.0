@@ -7,7 +7,7 @@ import { HTTP_STATUS, USER_MESSAGES } from "../constants/index.js";
 
 // Validation rules
 export const registerValidation = [
-  body("name").trim().notEmpty().withMessage("Name is required"),
+  body("username").trim().notEmpty().withMessage("Username is required"),
   body("email").isEmail().withMessage("Please provide a valid email"),
   body("password")
     .isLength({ min: 6 })
@@ -29,7 +29,7 @@ export const register = asyncHandler(async (req, res, next) => {
     throw ApiError.badRequest(USER_MESSAGES.VALIDATION_ERROR, errors.array());
   }
 
-  const { name, email, password } = req.body;
+  const { username, email, password } = req.body;
 
   // Check if user already exists
   const userExists = await User.findOne({ email });
@@ -37,9 +37,9 @@ export const register = asyncHandler(async (req, res, next) => {
     throw ApiError.conflict(USER_MESSAGES.USER_EXISTS);
   }
 
-  // Create user
+  // Create user with default 'user' role
   const user = await User.create({
-    name,
+    username,
     email,
     password,
   });
@@ -178,10 +178,9 @@ const sendTokenResponse = (
       token,
       user: {
         id: user._id,
-        name: user.name,
+        username: user.username,
         email: user.email,
         role: user.role,
-        avatar: user.avatar,
       },
     });
 };

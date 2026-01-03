@@ -4,6 +4,7 @@ import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/helpers.js";
 import { HTTP_STATUS } from "../constants/index.js";
 import { acknowledgeAlert as acknowledgeAlertService } from "../services/alertService.js";
+import mongoose from "mongoose";
 
 export const getAlerts = asyncHandler(async (req, res, next) => {
   const { venue_id, zone_id, severity, acknowledged } = req.query;
@@ -24,7 +25,7 @@ export const getAlerts = asyncHandler(async (req, res, next) => {
   const alerts = await Alert.find(filter)
     .populate("venue_id", "name camera_id")
     .populate("zone_id", "name")
-    .populate("acknowledged_by", "name email")
+    .populate("acknowledged_by", "username email")
     .sort({ triggered_at: -1 })
     .skip(skip)
     .limit(limit);
@@ -45,10 +46,14 @@ export const getAlerts = asyncHandler(async (req, res, next) => {
 });
 
 export const getAlertById = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw ApiError.badRequest("Invalid alert ID");
+  }
+
   const alert = await Alert.findById(req.params.id)
     .populate("venue_id", "name camera_id")
     .populate("zone_id", "name")
-    .populate("acknowledged_by", "name email");
+    .populate("acknowledged_by", "username email");
 
   if (!alert) {
     throw ApiError.notFound("Alert not found");
@@ -60,6 +65,10 @@ export const getAlertById = asyncHandler(async (req, res, next) => {
 });
 
 export const acknowledgeAlert = asyncHandler(async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    throw ApiError.badRequest("Invalid alert ID");
+  }
+
   const alertId = req.params.id;
   const userId = req.user._id;
 
