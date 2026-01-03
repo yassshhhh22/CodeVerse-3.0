@@ -3,6 +3,7 @@ import { Settings, Grid3x3, MapPin, Save, Trash2, Plus, AlertCircle } from "luci
 import VenueSelector from "../components/VenueSelector";
 import ZoneDefinition from "../components/ZoneDefinition";
 import ZoneList from "../components/ZoneList";
+import UserMenu from "../components/UserMenu";
 
 // Mock data for testing frontend
 const MOCK_VENUES = [
@@ -163,6 +164,7 @@ function AdminDashboardPage() {
               </h1>
               <p className="text-secondary">Define and manage zones for your venues</p>
             </div>
+            <UserMenu />
           </div>
         </div>
 

@@ -15,6 +15,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import UserMenu from "../components/UserMenu";
 
 function DashboardPage() {
   const [selectedCamera, setSelectedCamera] = useState("camera-1");
@@ -296,13 +297,7 @@ function DashboardPage() {
                   {getStatusIcon(systemStatus)} All Cameras Online
                 </span>
               </div>
-              <Link
-                to="/admin"
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-colors"
-              >
-                <Settings size={14} className="sm:w-4 sm:h-4 text-primary" />
-                <span className="text-xs sm:text-sm font-semibold">Admin Panel</span>
-              </Link>
+              <UserMenu />
             </div>
           </div>
         </div>
