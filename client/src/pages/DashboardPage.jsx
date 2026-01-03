@@ -296,10 +296,13 @@ function DashboardPage() {
                   {getStatusIcon(systemStatus)} All Cameras Online
                 </span>
               </div>
-              <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/10 border border-primary/30 rounded-lg">
-                <Shield size={14} className="sm:w-4 sm:h-4 text-primary" />
-                <span className="text-xs sm:text-sm font-semibold">Admin</span>
-              </div>
+              <Link
+                to="/admin"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-colors"
+              >
+                <Settings size={14} className="sm:w-4 sm:h-4 text-primary" />
+                <span className="text-xs sm:text-sm font-semibold">Admin Panel</span>
+              </Link>
             </div>
           </div>
         </div>
