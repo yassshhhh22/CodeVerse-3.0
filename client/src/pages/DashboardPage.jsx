@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Camera,
@@ -20,6 +20,35 @@ function DashboardPage() {
   const [selectedCamera, setSelectedCamera] = useState("camera-1");
   const [systemStatus, setSystemStatus] = useState("online"); // online, delayed, offline
   const [selectedZone, setSelectedZone] = useState("stage");
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Format time in IST
+  const getISTTime = () => {
+    return currentTime.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const getISTDate = () => {
+    return currentTime.toLocaleString("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   // Use only frame 5 data with 20 detections
   const frameDetections = [
@@ -279,64 +308,49 @@ function DashboardPage() {
       {/* Main Content */}
       <div className="relative z-10 pt-16 sm:pt-20 px-3 sm:px-6 pb-4 sm:pb-6 max-w-[1920px] mx-auto">
         {/* 2️⃣ Global Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
-          <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-3 sm:p-5 hover:border-primary/50 transition-all duration-300">
-            <div className="flex items-center justify-between mb-1 sm:mb-2">
-              <span className="text-secondary text-xs sm:text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6 max-w-6xl mx-auto">
+          <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-5 sm:p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-secondary text-sm sm:text-base">
                 Total People
               </span>
-              <Users size={16} className="sm:w-5 sm:h-5 text-primary" />
+              <Users size={20} className="sm:w-6 sm:h-6 text-primary" />
             </div>
-            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1">
+            <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">
               {summaryData.totalPeople.toLocaleString()}
             </div>
-            <div className="text-[10px] sm:text-xs text-secondary">
+            <div className="text-xs sm:text-sm text-secondary">
               Detected now
             </div>
           </div>
 
-          <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-3 sm:p-5 hover:border-primary/50 transition-all duration-300">
-            <div className="flex items-center justify-between mb-1 sm:mb-2">
-              <span className="text-secondary text-xs sm:text-sm">
+          <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-5 sm:p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-secondary text-sm sm:text-base">
                 Active Cameras
               </span>
-              <Camera size={16} className="sm:w-5 sm:h-5 text-primary" />
+              <Camera size={20} className="sm:w-6 sm:h-6 text-primary" />
             </div>
-            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1">
+            <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">
               {summaryData.activeCameras} / {summaryData.totalCameras}
             </div>
-            <div className="text-[10px] sm:text-xs text-green-500">
+            <div className="text-xs sm:text-sm text-green-500">
               All systems operational
             </div>
           </div>
 
-          <div className="bg-background/80 backdrop-blur-xl border border-accent/50 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:border-accent transition-all duration-300">
-            <div className="flex items-center justify-between mb-1 sm:mb-2">
-              <span className="text-secondary text-xs sm:text-sm">
-                Zones Warning
+          <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-5 sm:p-6 hover:border-primary/50 transition-all duration-300">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <span className="text-secondary text-sm sm:text-base">
+                Live Time (IST)
               </span>
-              <AlertTriangle size={16} className="sm:w-5 sm:h-5 text-accent" />
+              <Clock size={20} className="sm:w-6 sm:h-6 text-primary" />
             </div>
-            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1 text-accent">
-              {summaryData.warningZones}
+            <div className="text-3xl sm:text-4xl font-bold mb-1 sm:mb-2">
+              {getISTTime()}
             </div>
-            <div className="text-[10px] sm:text-xs text-secondary">
-              Requires attention
-            </div>
-          </div>
-
-          <div className="bg-background/80 backdrop-blur-xl border border-red-500/50 rounded-lg sm:rounded-xl p-3 sm:p-5 hover:border-red-500 transition-all duration-300">
-            <div className="flex items-center justify-between mb-1 sm:mb-2">
-              <span className="text-secondary text-xs sm:text-sm">
-                Zones Critical
-              </span>
-              <AlertCircle size={16} className="sm:w-5 sm:h-5 text-red-500" />
-            </div>
-            <div className="text-xl sm:text-3xl font-bold mb-0.5 sm:mb-1 text-red-500">
-              {summaryData.criticalZones}
-            </div>
-            <div className="text-[10px] sm:text-xs text-red-400">
-              Immediate action needed
+            <div className="text-xs sm:text-sm text-secondary">
+              {getISTDate()}
             </div>
           </div>
         </div>
@@ -618,54 +632,6 @@ function DashboardPage() {
                 </table>
               </div>
             </div>
-
-            {/* 6️⃣ Historical Analytics */}
-            <div className="bg-background/80 backdrop-blur-xl border border-border rounded-lg sm:rounded-xl p-3 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-2">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Activity size={20} className="sm:w-6 sm:h-6 text-primary" />
-                  <h2 className="text-lg sm:text-xl font-bold">
-                    Historical Analytics
-                  </h2>
-                </div>
-                <div className="flex gap-2">
-                  <select className="flex-1 sm:flex-none bg-background border border-border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs focus:border-primary focus:outline-none">
-                    <option>Today</option>
-                    <option>Yesterday</option>
-                    <option>Last 7 days</option>
-                  </select>
-                  <select className="flex-1 sm:flex-none bg-background border border-border rounded-lg px-2 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs focus:border-primary focus:outline-none">
-                    <option>All Zones</option>
-                    <option>Stage Area</option>
-                    <option>Food Court</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Simple Bar Chart */}
-              <div className="flex items-end justify-between gap-1 sm:gap-2 h-24 sm:h-32 px-1 sm:px-2">
-                {[45, 62, 78, 85, 92, 88, 79, 68, 55, 48, 52, 58].map(
-                  (value, index) => (
-                    <div
-                      key={index}
-                      className="flex-1 flex flex-col items-center gap-1"
-                    >
-                      <div
-                        className="w-full bg-primary/80 rounded-t hover:bg-primary transition-colors cursor-pointer"
-                        style={{ height: `${value}%` }}
-                        title={`${value}% capacity`}
-                      ></div>
-                      <span className="text-[10px] text-secondary">
-                        {index}h
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-              <div className="text-center text-xs text-secondary mt-2">
-                Crowd Density Over Time (Hourly)
-              </div>
-            </div>
           </div>
 
           {/* Right Column - Alerts and Admin */}
@@ -713,9 +679,33 @@ function DashboardPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Navigate to Historical Analysis */}
+              <Link
+                to="/analytics"
+                className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 hover:border-primary/50 transition-all duration-300 group"
+              >
+                <Activity size={18} className="text-primary" />
+                <span className="text-sm font-semibold text-primary">
+                  View Historical Analysis
+                </span>
+                <svg
+                  className="w-4 h-4 text-primary transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
             </div>
 
-            {/* 7️⃣ Admin Configuration Panel */}
+            {/* 7️⃣ Admin Configuration Panel 
             <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl p-6">
               <div className="flex items-center gap-3 mb-4">
                 <Settings size={24} className="text-primary" />
@@ -768,6 +758,7 @@ function DashboardPage() {
                 </button>
               </div>
             </div>
+            */}
           </div>
         </div>
 

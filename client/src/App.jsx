@@ -4,6 +4,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
+import HistoricalAnalysisPage from "./pages/HistoricalAnalysisPage";
 import "./App.css";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/analytics" element={<HistoricalAnalysisPage />} />
         {!user && <Route path="*" element={<Navigate to="/" replace />} />}
       </Routes>
     </BrowserRouter>
