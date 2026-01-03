@@ -5,6 +5,7 @@ import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import HistoricalAnalysisPage from "./pages/HistoricalAnalysisPage";
+import UserManagementPage from "./pages/UserManagementPage";
 import "./App.css";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/admin" element={<AdminDashboardPage />} />
         <Route path="/analytics" element={<HistoricalAnalysisPage />} />
+        <Route path="/users" element={<UserManagementPage />} />
       </Routes>
     </BrowserRouter>
   );

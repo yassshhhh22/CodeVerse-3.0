@@ -19,7 +19,8 @@ export const useAlertStore = create((set, get) => ({
       const url = queryString ? `/api/alerts?${queryString}` : "/api/alerts";
       const response = await api.get(url);
       if (response.data.success) {
-        set({ alerts: response.data.data });
+        // Backend returns { alerts: [...], pagination: {...} }
+        set({ alerts: response.data.data.alerts || response.data.data });
         return response.data;
       } else {
         set({ error: response.data.message });

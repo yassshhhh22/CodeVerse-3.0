@@ -14,11 +14,13 @@ import {
   Eye,
   CheckCircle,
   XCircle,
+  Check,
 } from "lucide-react";
 import { useVenueStore } from "../store/VenueStore";
 import { useAlertStore } from "../store/AlertStore";
 import { useGridStore } from "../store/GridStore";
 import { useAuthStore } from "../store/AuthStore";
+import { useZoneStore } from "../store/ZoneStore";
 import { useWebSocket } from "../hooks/useWebSocket";
 import UserMenu from "../components/UserMenu";
 import AlertToast from "../components/AlertToast";
@@ -35,8 +37,9 @@ function DashboardPage() {
 
   // Zustand stores
   const { venues, fetchVenues } = useVenueStore();
-  const { alerts, fetchAlerts } = useAlertStore();
+  const { alerts, fetchAlerts, acknowledgeAlert } = useAlertStore();
   const { user, fetchMe } = useAuthStore();
+  const { zones, fetchZonesByVenue } = useZoneStore();
 
   // Get selected venue camera_id for WebSocket subscription
   const selectedVenue = venues?.find(v => v._id === selectedCamera) || venues?.[0] || null;
@@ -74,7 +77,7 @@ function DashboardPage() {
       setRealtimeAlerts(prev => [alert, ...prev].slice(0, 10));
       
       // Also fetch updated alerts from API
-      fetchAlerts({ limit: 10, acknowledged: "false" });
+      fetchAlerts({ limit: 10 });
     },
   });
 
@@ -82,8 +85,31 @@ function DashboardPage() {
   useEffect(() => {
     fetchMe();
     fetchVenues();
-    fetchAlerts({ limit: 10, acknowledged: "false" });
+    fetchAlerts({ limit: 10 }); // Fetch all recent alerts (both acknowledged and unacknowledged)
   }, []);
+
+  // Poll alerts every 10 seconds
+  useEffect(() => {
+    const alertInterval = setInterval(() => {
+      fetchAlerts({ limit: 10 }); // Fetch all recent alerts
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(alertInterval);
+  }, [fetchAlerts]);
+
+  // Poll venues every 30 seconds to update status
+  useEffect(() => {
+    const venueInterval = setInterval(() => {
+      fetchVenues();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(venueInterval);
+  }, [fetchVenues]);
+
+  // Debug: Log alerts when they change
+  useEffect(() => {
+    console.log("Dashboard alerts updated:", alerts);
+  }, [alerts]);
 
   // Set default selected camera when venues load
   useEffect(() => {
@@ -91,6 +117,13 @@ function DashboardPage() {
       setSelectedCamera(venues[0]._id);
     }
   }, [venues, selectedCamera]);
+
+  // Fetch zones when selected camera/venue changes
+  useEffect(() => {
+    if (selectedCamera) {
+      fetchZonesByVenue(selectedCamera);
+    }
+  }, [selectedCamera, fetchZonesByVenue]);
 
   // Update time every second
   useEffect(() => {
@@ -134,8 +167,8 @@ function DashboardPage() {
     totalPeople: frameDetections.length,
     activeCameras: venues?.filter(v => v.status === 'active').length || 0,
     totalCameras: venues?.length || 0,
-    warningZones: alerts?.filter(a => a.severity === 'warning' && !a.acknowledged_by).length || 0,
-    criticalZones: alerts?.filter(a => a.severity === 'critical' && !a.acknowledged_by).length || 0,
+    warningZones: Array.isArray(alerts) ? alerts.filter(a => a.severity === 'warning' && !a.acknowledged_by).length : 0,
+    criticalZones: Array.isArray(alerts) ? alerts.filter(a => a.severity === 'critical' && !a.acknowledged_by).length : 0,
   };
 
   // Use real grid density data from WebSocket or fallback to empty grid
@@ -181,71 +214,6 @@ function DashboardPage() {
       return `rgb(${r}, ${g}, 0)`;
     }
   };
-
-  const mockAlerts = [
-    {
-      id: 1,
-      zone: "Stage Area",
-      severity: "critical",
-      message: "Crowd density exceeded safe limit",
-      action: "Pause entry",
-      time: "2 mins ago",
-    },
-    {
-      id: 2,
-      zone: "Food Court",
-      severity: "warning",
-      message: "Density approaching threshold",
-      action: "Monitor closely",
-      time: "5 mins ago",
-    },
-    {
-      id: 3,
-      zone: "Exit Gate 2",
-      severity: "warning",
-      message: "Bottleneck detected",
-      action: "Open additional exits",
-      time: "8 mins ago",
-    },
-  ];
-
-  const cameras = [
-    {
-      id: "camera-1",
-      name: "Stage Area",
-      status: "online",
-      density: 92,
-      lastUpdate: "Just now",
-    },
-    {
-      id: "camera-2",
-      name: "Food Court",
-      status: "online",
-      density: 78,
-      lastUpdate: "2 sec ago",
-    },
-    {
-      id: "camera-3",
-      name: "Exit Gate 1",
-      status: "online",
-      density: 45,
-      lastUpdate: "1 sec ago",
-    },
-    {
-      id: "camera-4",
-      name: "Exit Gate 2",
-      status: "online",
-      density: 73,
-      lastUpdate: "3 sec ago",
-    },
-    {
-      id: "camera-5",
-      name: "Parking Lot",
-      status: "offline",
-      density: 0,
-      lastUpdate: "5 mins ago",
-    },
-  ];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -404,13 +372,23 @@ function DashboardPage() {
                     Live Crowd Heatmap
                   </h2>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-secondary">
-                  <Activity
-                    size={12}
-                    className="sm:w-3.5 sm:h-3.5 text-green-500 animate-pulse"
-                  />
-                  <span>Live</span>
-                </div>
+                {selectedVenue && selectedVenue.status === 'active' && wsConnected && lastDataReceived && (Date.now() - new Date(lastDataReceived).getTime() < 30000) ? (
+                  <div className="flex items-center gap-2 text-xs text-green-500">
+                    <Activity
+                      size={12}
+                      className="sm:w-3.5 sm:h-3.5 animate-pulse"
+                    />
+                    <span>Live</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs text-red-500">
+                    <Activity
+                      size={12}
+                      className="sm:w-3.5 sm:h-3.5"
+                    />
+                    <span>Offline</span>
+                  </div>
+                )}
               </div>
 
               {/* Camera Selection */}
@@ -423,15 +401,15 @@ function DashboardPage() {
                   onChange={(e) => setSelectedCamera(e.target.value)}
                   className="flex-1 sm:flex-none bg-background border border-border rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-primary focus:outline-none"
                 >
-                  {cameras.map((cam) => (
-                    <option key={cam.id} value={cam.id}>
-                      {cam.name} ({cam.status})
+                  {venues?.map((venue) => (
+                    <option key={venue._id} value={venue._id}>
+                      {venue.name} ({venue.status || 'active'})
                     </option>
                   ))}
                 </select>
                 <div className="text-[10px] sm:text-xs text-secondary sm:ml-auto flex items-center gap-1">
                   <Clock size={10} className="sm:w-3 sm:h-3 inline" />
-                  Last updated: Just now
+                  Last updated: {wsGridDensity?.timestamp ? new Date(wsGridDensity.timestamp).toLocaleTimeString() : 'Just now'}
                 </div>
               </div>
 
@@ -605,38 +583,43 @@ function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {cameras.map((camera) => (
+                    {zones && zones.length > 0 ? zones.map((zone) => {
+                      const zoneDensity = wsZoneDensities?.find(zd => zd.zone_id === zone._id);
+                      const densityValue = zoneDensity?.count || 0;
+                      const densityPercentage = Math.min(Math.round(densityValue), 100);
+                      const venue = venues?.find(v => v._id === zone.venue_id);
+                      const isLive = venue?.status === 'active' && wsConnected && lastDataReceived && (Date.now() - new Date(lastDataReceived).getTime() < 30000);
+                      const status = isLive ? 'online' : 'offline';
+                      
+                      return (
                       <tr
-                        key={camera.id}
+                        key={zone._id}
                         className="border-b border-border/50 hover:bg-primary/5 transition-colors"
                       >
                         <td className="py-2 sm:py-3 px-2 font-mono text-[10px] sm:text-xs">
-                          {camera.id}
+                          {venue?.camera_id || 'N/A'}
                         </td>
                         <td className="py-2 sm:py-3 px-2 text-xs sm:text-sm">
-                          {camera.name}
+                          {zone.name}
                         </td>
                         <td className="py-2 sm:py-3 px-2">
                           <span
-                            className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${getStatusColor(
-                              camera.status
-                            )}`}
+                            className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${getStatusColor(status)}`}
                           >
-                            {camera.status === "online" && (
+                            {status === "online" && (
                               <CheckCircle
                                 size={12}
                                 className="sm:w-3.5 sm:h-3.5"
                               />
                             )}
-                            {camera.status === "offline" && (
+                            {status === "offline" && (
                               <XCircle
                                 size={12}
                                 className="sm:w-3.5 sm:h-3.5"
                               />
                             )}
                             <span className="hidden sm:inline">
-                              {camera.status.charAt(0).toUpperCase() +
-                                camera.status.slice(1)}
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
                             </span>
                           </span>
                         </td>
@@ -645,25 +628,36 @@ function DashboardPage() {
                             <div className="w-12 sm:w-16 bg-border rounded-full h-1.5 sm:h-2 overflow-hidden">
                               <div
                                 className={`h-full ${
-                                  camera.density >= 90
+                                  densityPercentage >= 90
                                     ? "bg-red-500"
-                                    : camera.density >= 75
+                                    : densityPercentage >= 75
                                     ? "bg-accent"
                                     : "bg-green-500"
                                 }`}
-                                style={{ width: `${camera.density}%` }}
+                                style={{ width: `${densityPercentage}%` }}
                               ></div>
                             </div>
                             <span className="text-[10px] sm:text-xs">
-                              {camera.density}%
+                              {densityPercentage}%
                             </span>
                           </div>
                         </td>
                         <td className="py-2 sm:py-3 px-2 text-[10px] sm:text-xs text-secondary">
-                          {camera.lastUpdate}
+                          {isLive && lastDataReceived ? (() => {
+                            const seconds = Math.floor((Date.now() - new Date(lastDataReceived).getTime()) / 1000);
+                            if (seconds < 5) return 'Just now';
+                            if (seconds < 60) return `${seconds}s ago`;
+                            return `${Math.floor(seconds / 60)}m ago`;
+                          })() : 'No data'}
                         </td>
                       </tr>
-                    ))}
+                    )}) : (
+                      <tr>
+                        <td colSpan="5" className="py-4 text-center text-secondary text-sm">
+                          No zones configured for this venue
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -681,39 +675,85 @@ function DashboardPage() {
               </div>
 
               <div className="space-y-3">
-                {(alerts && alerts.length > 0 ? alerts : mockAlerts).map((alert) => (
-                  <div
-                    key={alert.id || alert._id}
-                    className={`p-4 rounded-lg border ${
-                      alert.severity === "critical"
-                        ? "bg-red-500/10 border-red-500/50"
-                        : "bg-accent/10 border-accent/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {alert.severity === "critical" ? (
-                          <AlertCircle size={18} className="text-red-500" />
-                        ) : (
-                          <AlertTriangle size={18} className="text-accent" />
-                        )}
-                        <span className="font-semibold">{alert.zone}</span>
+                {alerts && alerts.length > 0 ? (
+                  alerts.slice(0, 5).map((alert) => {
+                    const zoneName = alert.zone_id?.name || alert.venue_id?.name || 'Unknown Zone';
+                    const timeAgo = alert.triggered_at ? 
+                      new Date(alert.triggered_at).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      }) : 'N/A';
+                    const isAcknowledged = alert.acknowledged_by !== null && alert.acknowledged_by !== undefined;
+                    
+                    return (
+                    <div
+                      key={alert._id}
+                      className={`p-4 rounded-lg border ${
+                        isAcknowledged 
+                          ? "bg-gray-500/10 border-gray-500/30 opacity-60"
+                          : alert.severity === "critical"
+                          ? "bg-red-500/10 border-red-500/50"
+                          : "bg-accent/10 border-accent/50"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          {isAcknowledged ? (
+                            <CheckCircle size={18} className="text-green-500" />
+                          ) : alert.severity === "critical" ? (
+                            <AlertCircle size={18} className="text-red-500" />
+                          ) : (
+                            <AlertTriangle size={18} className="text-accent" />
+                          )}
+                          <span className="font-semibold">{zoneName}</span>
+                          {isAcknowledged && (
+                            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full">
+                              Acknowledged
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-secondary">
+                          {timeAgo}
+                        </span>
                       </div>
-                      <span className="text-xs text-secondary">
-                        {alert.time}
-                      </span>
+                      <p className="text-sm text-secondary mb-2">
+                        {alert.message}
+                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-secondary">Density:</span>
+                          <span className="text-primary font-semibold">
+                            {alert.density_value}%
+                          </span>
+                        </div>
+                        {!isAcknowledged && (
+                          <button
+                            onClick={async () => {
+                              const result = await acknowledgeAlert(alert._id);
+                              if (result.success) {
+                                // Alert is already updated in store by acknowledgeAlert
+                                console.log("Alert acknowledged successfully");
+                              }
+                            }}
+                            className="flex items-center gap-1 px-3 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg text-xs font-medium transition-colors"
+                          >
+                            <Check size={14} />
+                            Acknowledge
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <p className="text-sm text-secondary mb-2">
-                      {alert.message}
-                    </p>
-                    <div className="flex items-center gap-2 text-xs">
-                      <span className="text-secondary">Suggested action:</span>
-                      <span className="text-primary font-semibold">
-                        {alert.action}
-                      </span>
-                    </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8 text-secondary">
+                    <Bell size={48} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">No active alerts</p>
+                    <p className="text-xs mt-1">All zones are operating normally</p>
                   </div>
-                ))}
+                )}
               </div>
 
               {/* Navigate to Historical Analysis */}

@@ -3,6 +3,7 @@ import { Settings, Grid3x3, MapPin, Save, Trash2, Plus, AlertCircle } from "luci
 import VenueSelector from "../components/VenueSelector";
 import ZoneDefinition from "../components/ZoneDefinition";
 import ZoneList from "../components/ZoneList";
+import ThresholdManager from "../components/ThresholdManager";
 import UserMenu from "../components/UserMenu";
 import { useVenueStore } from "../store/VenueStore";
 import { useZoneStore } from "../store/ZoneStore";
@@ -276,6 +277,16 @@ function AdminDashboardPage() {
                 />
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Threshold Management Section */}
+        {selectedVenue && (
+          <div className="mt-6">
+            <ThresholdManager
+              venue={selectedVenue}
+              zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
+            />
           </div>
         )}
 

@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, AlertTriangle, AlertCircle, Bell } from "lucide-react";
+import { X, AlertTriangle, AlertCircle, Bell, Check } from "lucide-react";
+import { useAlertStore } from "../store/AlertStore";
 
-function AlertToast({ alert, onClose, duration = 10000 }) {
+function AlertToast({ alert, onClose, duration = 10000, onAcknowledge }) {
   const [isExiting, setIsExiting] = useState(false);
+  const [isAcknowledging, setIsAcknowledging] = useState(false);
+  const { acknowledgeAlert } = useAlertStore();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -17,6 +20,26 @@ function AlertToast({ alert, onClose, duration = 10000 }) {
     setTimeout(() => {
       onClose();
     }, 300);
+  };
+
+  const handleAcknowledge = async () => {
+    if (!alert._id) return;
+    
+    setIsAcknowledging(true);
+    try {
+      const result = await acknowledgeAlert(alert._id);
+      if (result.success) {
+        if (onAcknowledge) {
+          onAcknowledge(alert._id);
+        }
+        // Close after acknowledging
+        setTimeout(() => handleClose(), 500);
+      }
+    } catch (err) {
+      console.error("Failed to acknowledge alert:", err);
+    } finally {
+      setIsAcknowledging(false);
+    }
   };
 
   const getSeverityColor = () => {
@@ -73,6 +96,30 @@ function AlertToast({ alert, onClose, duration = 10000 }) {
             className="flex-shrink-0 p-1 hover:bg-background/50 rounded transition-colors"
           >
             <X size={18} />
+          </button>
+        </div>
+
+        {/* Acknowledge Button */}
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={handleAcknowledge}
+            disabled={isAcknowledging}
+            className={`
+              flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg
+              font-semibold text-sm transition-all
+              ${alert.severity === "critical"
+                ? "bg-red-500 hover:bg-red-600 text-white"
+                : "bg-yellow-500 hover:bg-yellow-600 text-background"
+              }
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+          >
+            {isAcknowledging ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            ) : (
+              <Check size={16} />
+            )}
+            <span>{isAcknowledging ? "Acknowledging..." : "Acknowledge"}</span>
           </button>
         </div>
       </div>

@@ -10,81 +10,210 @@ import {
   Activity,
   Download,
   Filter,
+  Camera,
 } from "lucide-react";
 import { useAnalyticsStore } from "../store/AnalyticsStore";
 import { useVenueStore } from "../store/VenueStore";
+import { useZoneStore } from "../store/ZoneStore";
 
 function HistoricalAnalysisPage() {
+  const [selectedVenueId, setSelectedVenueId] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState("7days");
-  const [selectedMetric, setSelectedMetric] = useState("crowd");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [zoneData, setZoneData] = useState([]);
 
   // Zustand stores
-  const { venueAnalytics, fetchVenueAnalytics, isLoading } = useAnalyticsStore();
-  const { venues, currentVenue, fetchVenues } = useVenueStore();
+  const { venueAnalytics, fetchVenueAnalytics, fetchZoneAnalytics, isLoading } = useAnalyticsStore();
+  const { venues, fetchVenues } = useVenueStore();
+  const { zones, fetchZonesByVenue } = useZoneStore();
 
   // Fetch data on mount
   useEffect(() => {
     fetchVenues();
   }, []);
 
+  // Set first venue as default
+  useEffect(() => {
+    if (venues && venues.length > 0 && !selectedVenueId) {
+      setSelectedVenueId(venues[0]._id);
+    }
+  }, [venues]);
+
+  // Fetch zones when venue changes
+  useEffect(() => {
+    if (selectedVenueId) {
+      fetchZonesByVenue(selectedVenueId);
+    }
+  }, [selectedVenueId]);
+
   // Fetch analytics when venue or period changes
   useEffect(() => {
-    if (currentVenue?._id) {
-      fetchVenueAnalytics(currentVenue._id, {
-        period: selectedPeriod,
-        metric: selectedMetric,
-      });
+    if (selectedVenueId) {
+      const params = {};
+      
+      if (selectedPeriod === "custom" && startDate && endDate) {
+        params.start_date = new Date(startDate).toISOString();
+        params.end_date = new Date(endDate).toISOString();
+      } else {
+        const end = new Date();
+        const start = new Date();
+        
+        switch (selectedPeriod) {
+          case "24hours":
+            start.setHours(start.getHours() - 24);
+            break;
+          case "7days":
+            start.setDate(start.getDate() - 7);
+            break;
+          case "30days":
+            start.setDate(start.getDate() - 30);
+            break;
+          case "90days":
+            start.setDate(start.getDate() - 90);
+            break;
+        }
+        
+        params.start_date = start.toISOString();
+        params.end_date = end.toISOString();
+      }
+      
+      fetchVenueAnalytics(selectedVenueId, params);
+      
+      // Fetch zone analytics for each zone
+      if (zones && zones.length > 0) {
+        fetchZoneData(selectedVenueId, zones, params);
+      }
     }
-  }, [currentVenue?._id, selectedPeriod, selectedMetric]);
+  }, [selectedVenueId, selectedPeriod, startDate, endDate, zones]);
 
-  // Sample historical data
-  const historicalData = {
-    daily: [
-      { date: "Jan 27", count: 156, peak: 189, avg: 142 },
-      { date: "Jan 28", count: 178, peak: 203, avg: 165 },
-      { date: "Jan 29", count: 145, peak: 172, avg: 138 },
-      { date: "Jan 30", count: 192, peak: 218, avg: 181 },
-      { date: "Jan 31", count: 167, peak: 195, avg: 159 },
-      { date: "Feb 01", count: 201, peak: 234, avg: 189 },
-      { date: "Feb 02", count: 183, peak: 208, avg: 174 },
-    ],
-    hourly: [
-      { hour: "00:00", count: 12 },
-      { hour: "02:00", count: 8 },
-      { hour: "04:00", count: 5 },
-      { hour: "06:00", count: 15 },
-      { hour: "08:00", count: 45 },
-      { hour: "10:00", count: 89 },
-      { hour: "12:00", count: 134 },
-      { hour: "14:00", count: 156 },
-      { hour: "16:00", count: 178 },
-      { hour: "18:00", count: 203 },
-      { hour: "20:00", count: 165 },
-      { hour: "22:00", count: 87 },
-    ],
-    zones: [
-      { name: "Main Entrance", count: 3421, percentage: 28 },
-      { name: "Stage Area", count: 2987, percentage: 24 },
-      { name: "Food Court", count: 2156, percentage: 18 },
-      { name: "Exhibition Hall", count: 1897, percentage: 16 },
-      { name: "Parking", count: 1089, percentage: 9 },
-      { name: "Others", count: 623, percentage: 5 },
-    ],
+  // Fetch zone data for all zones
+  const fetchZoneData = async (venueId, zonesArray, params) => {
+    try {
+      const zonePromises = zonesArray.map(zone => 
+        fetchZoneAnalytics(venueId, zone._id, params)
+      );
+      
+      const zoneResults = await Promise.all(zonePromises);
+      
+      const totalVisitors = logs.reduce((sum, log) => sum + (log.total_detections || 0), 0);
+      
+      const processedZones = zoneResults.map((result, index) => {
+        if (result.success && result.data) {
+          const zoneLogs = result.data.logs || [];
+          const zoneCount = zoneLogs.reduce((sum, log) => sum + (log.total_detections || 0), 0);
+          const percentage = totalVisitors > 0 ? Math.round((zoneCount / totalVisitors) * 100) : 0;
+          
+          return {
+            name: zonesArray[index].name,
+            count: zoneCount,
+            percentage: percentage
+          };
+        }
+        return {
+          name: zonesArray[index].name,
+          count: 0,
+          percentage: 0
+        };
+      });
+      
+      setZoneData(processedZones);
+    } catch (err) {
+      console.error("Error fetching zone data:", err);
+      setZoneData([]);
+    }
   };
 
-  // Statistics
+  // Process real analytics data
+  const selectedVenue = venues?.find(v => v._id === selectedVenueId);
+  const logs = venueAnalytics?.logs || [];
+  
+  // Helper functions to process data
+  function groupByDay(logs) {
+    const dayMap = {};
+    logs.forEach(log => {
+      const dateKey = new Date(log.createdAt).toISOString().split('T')[0];
+      if (!dayMap[dateKey]) {
+        dayMap[dateKey] = { date: dateKey, peak: 0, avg: 0, total: 0, records: 0 };
+      }
+      dayMap[dateKey].peak = Math.max(dayMap[dateKey].peak, log.peak_density || 0);
+      dayMap[dateKey].total += log.avg_density || 0;
+      dayMap[dateKey].records++;
+    });
+    
+    return Object.values(dayMap).map(day => ({
+      ...day,
+      avg: day.records > 0 ? Math.round(day.total / day.records) : 0
+    })).slice(-7);
+  }
+
+  function groupByHour(logs) {
+    const hourMap = {};
+    for (let i = 0; i < 24; i += 2) {
+      hourMap[i] = { hour: `${i.toString().padStart(2, '0')}:00`, count: 0 };
+    }
+    
+    logs.forEach(log => {
+      const date = new Date(log.createdAt);
+      const hour = Math.floor(date.getHours() / 2) * 2;
+      if (hourMap[hour]) {
+        hourMap[hour].count += log.avg_density || 0;
+      }
+    });
+    
+    return Object.values(hourMap);
+  }
+
+  function getDayCount(logs) {
+    if (logs.length === 0) return 1;
+    const dates = new Set(logs.map(log => new Date(log.createdAt).toDateString()));
+    return dates.size || 1;
+  }
+
+  function findPeakHour(logs) {
+    if (logs.length === 0) return "N/A";
+    const hourCounts = {};
+    logs.forEach(log => {
+      const hour = new Date(log.createdAt).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + (log.peak_density || 0);
+    });
+    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    return peakHour ? `${peakHour[0].toString().padStart(2, '0')}:00` : "N/A";
+  }
+
+  function findPeakDay(logs) {
+    if (logs.length === 0) return "N/A";
+    const dayCounts = {};
+    logs.forEach(log => {
+      const date = new Date(log.createdAt).toISOString().split('T')[0];
+      dayCounts[date] = (dayCounts[date] || 0) + (log.peak_density || 0);
+    });
+    const peakDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0];
+    return peakDay ? new Date(peakDay[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : "N/A";
+  }
+  
+  // Group logs by date and hour
+  const processedData = {
+    daily: groupByDay(logs),
+    hourly: groupByHour(logs),
+    zones: zoneData.length > 0 ? zoneData : [],
+  };
+
+  // Calculate statistics from real data
   const stats = {
-    totalVisitors: 12173,
-    avgPerDay: 1739,
-    peakHour: "18:00 - 19:00",
-    peakDay: "Saturday",
-    avgDuration: "2h 34m",
-    returnRate: "34%",
+    totalVisitors: logs.reduce((sum, log) => sum + (log.total_detections || 0), 0),
+    avgPerDay: logs.length > 0 ? Math.round(logs.reduce((sum, log) => sum + (log.avg_density || 0), 0) / Math.max(1, getDayCount(logs))) : 0,
+    peakHour: findPeakHour(logs),
+    peakDay: findPeakDay(logs),
+    avgDuration: "N/A",
+    returnRate: "N/A",
   };
 
   // Get max value for bar chart scaling
-  const maxDaily = Math.max(...historicalData.daily.map((d) => d.peak));
-  const maxHourly = Math.max(...historicalData.hourly.map((h) => h.count));
+  const maxDaily = processedData.daily.length > 0 ? Math.max(...processedData.daily.map((d) => d.peak)) : 100;
+  const maxHourly = processedData.hourly.length > 0 ? Math.max(...processedData.hourly.map((d) => d.count)) : 100;
+
+  const historicalData = processedData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95 text-text">
@@ -122,6 +251,29 @@ function HistoricalAnalysisPage() {
 
       {/* Main Content */}
       <div className="relative z-10 pt-20 sm:pt-24 px-4 sm:px-6 pb-6 max-w-[1920px] mx-auto">
+        {/* Venue Selector */}
+        <div className="mb-6 bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
+          <label className="text-sm text-secondary mb-2 block">
+            <Camera size={16} className="inline mr-2" />
+            Select Venue
+          </label>
+          <select
+            value={selectedVenueId || ""}
+            onChange={(e) => setSelectedVenueId(e.target.value)}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+          >
+            {venues && venues.length > 0 ? (
+              venues.map(venue => (
+                <option key={venue._id} value={venue._id}>
+                  {venue.name} ({venue.camera_id})
+                </option>
+              ))
+            ) : (
+              <option value="">Loading venues...</option>
+            )}
+          </select>
+        </div>
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1 bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
@@ -141,23 +293,54 @@ function HistoricalAnalysisPage() {
             </select>
           </div>
 
-          <div className="flex-1 bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
-            <label className="text-sm text-secondary mb-2 block">
-              Metric Type
-            </label>
-            <select
-              value={selectedMetric}
-              onChange={(e) => setSelectedMetric(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
-            >
-              <option value="crowd">Crowd Density</option>
-              <option value="movement">Movement Patterns</option>
-              <option value="duration">Average Duration</option>
-              <option value="zones">Zone Analytics</option>
-            </select>
-          </div>
+          {selectedPeriod === "custom" && (
+            <>
+              <div className="flex-1 bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
+                <label className="text-sm text-secondary mb-2 block">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                />
+              </div>
+              <div className="flex-1 bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
+                <label className="text-sm text-secondary mb-2 block">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                />
+              </div>
+            </>
+          )}
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="text-secondary mt-4">Loading analytics data...</p>
+          </div>
+        )}
+
+        {/* No Data State */}
+        {!isLoading && (!logs || logs.length === 0) && (
+          <div className="text-center py-12 bg-background/80 backdrop-blur-xl border border-border rounded-xl">
+            <BarChart3 size={48} className="mx-auto text-secondary mb-4" />
+            <p className="text-secondary text-lg">No analytics data available for this period</p>
+            <p className="text-secondary text-sm mt-2">Try selecting a different time range or ensure the CV system is running</p>
+          </div>
+        )}
+
+        {/* Analytics Display */}
+        {!isLoading && logs && logs.length > 0 && (
+          <>
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl p-4">
@@ -471,6 +654,8 @@ function HistoricalAnalysisPage() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
