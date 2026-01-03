@@ -4,11 +4,11 @@ import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    username: {
       type: String,
-      required: [true, "Please add a name"],
+      required: [true, "Please add a username"],
       trim: true,
-      maxlength: [50, "Name cannot be more than 50 characters"],
+      maxlength: [50, "Username cannot be more than 50 characters"],
     },
     email: {
       type: String,
@@ -32,22 +32,6 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    avatar: {
-      type: String,
-      default: "https://via.placeholder.com/150",
-    },
-    bio: {
-      type: String,
-      maxlength: [500, "Bio cannot be more than 500 characters"],
-    },
-    isEmailVerified: {
-      type: Boolean,
-      default: false,
-    },
-    resetPasswordToken: String,
-    resetPasswordExpire: Date,
-    emailVerificationToken: String,
-    emailVerificationExpire: Date,
   },
   {
     timestamps: true,

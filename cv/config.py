@@ -49,7 +49,7 @@ YOLO_CONFIG = {
 # =====================================
 WEBSOCKET_CONFIG = {
     # Backend WebSocket endpoint
-    "url": "ws://localhost:3000/camera-stream",  # Update with your backend URL
+    "url": "ws://localhost:5000/camera-stream",  # Update with your backend URL
     
     # Reconnection settings
     "reconnect_interval": 5,  # seconds
