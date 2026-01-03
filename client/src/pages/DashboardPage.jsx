@@ -15,6 +15,10 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import { useVenueStore } from "../store/VenueStore";
+import { useAlertStore } from "../store/AlertStore";
+import { useGridStore } from "../store/GridStore";
+import { useAuthStore } from "../store/AuthStore";
 import UserMenu from "../components/UserMenu";
 
 function DashboardPage() {
@@ -22,6 +26,19 @@ function DashboardPage() {
   const [systemStatus, setSystemStatus] = useState("online"); // online, delayed, offline
   const [selectedZone, setSelectedZone] = useState("stage");
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Zustand stores
+  const { venues, fetchVenues } = useVenueStore();
+  const { alerts, fetchAlerts } = useAlertStore();
+  const { gridDensity, fetchGridDensity } = useGridStore();
+  const { user, fetchMe } = useAuthStore();
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchMe();
+    fetchVenues();
+    fetchAlerts({ limit: 10 });
+  }, []);
 
   // Update time every second
   useEffect(() => {
@@ -163,7 +180,7 @@ function DashboardPage() {
     }
   };
 
-  const alerts = [
+  const mockAlerts = [
     {
       id: 1,
       zone: "Stage Area",
@@ -643,9 +660,9 @@ function DashboardPage() {
               </div>
 
               <div className="space-y-3">
-                {alerts.map((alert) => (
+                {(alerts && alerts.length > 0 ? alerts : mockAlerts).map((alert) => (
                   <div
-                    key={alert.id}
+                    key={alert.id || alert._id}
                     className={`p-4 rounded-lg border ${
                       alert.severity === "critical"
                         ? "bg-red-500/10 border-red-500/50"

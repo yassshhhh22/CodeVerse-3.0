@@ -4,6 +4,10 @@ import VenueSelector from "../components/VenueSelector";
 import ZoneDefinition from "../components/ZoneDefinition";
 import ZoneList from "../components/ZoneList";
 import UserMenu from "../components/UserMenu";
+import { useVenueStore } from "../store/VenueStore";
+import { useZoneStore } from "../store/ZoneStore";
+import { useAuthStore } from "../store/AuthStore";
+import { useNavigate } from "react-router-dom";
 
 // Mock data for testing frontend
 const MOCK_VENUES = [
@@ -83,24 +87,44 @@ const MOCK_ZONES = {
 };
 
 function AdminDashboardPage() {
+  const navigate = useNavigate();
   const [selectedVenue, setSelectedVenue] = useState(null);
-  const [venues, setVenues] = useState(MOCK_VENUES);
-  const [allZones, setAllZones] = useState(MOCK_ZONES);
-  const [zones, setZones] = useState([]);
   const [isDefiningZone, setIsDefiningZone] = useState(false);
   const [currentZoneName, setCurrentZoneName] = useState("");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
 
+  // Zustand stores
+  const { user } = useAuthStore();
+  const { venues, fetchVenues, isLoading: venuesLoading } = useVenueStore();
+  const { 
+    zones, 
+    fetchZonesByVenue, 
+    createZone, 
+    deleteZone,
+    isLoading: zonesLoading 
+  } = useZoneStore();
+
+  // Check if user is admin
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
+
+  // Fetch venues on mount
+  useEffect(() => {
+    fetchVenues();
+  }, []);
+
   // Load zones when venue is selected
   useEffect(() => {
-    if (selectedVenue) {
-      setZones(allZones[selectedVenue._id] || []);
+    if (selectedVenue?._id) {
+      fetchZonesByVenue(selectedVenue._id);
     }
-  }, [selectedVenue, allZones]);
+  }, [selectedVenue]);
 
-  const handleSaveZone = (gridSelection) => {
+  const handleSaveZone = async (gridSelection) => {
     if (!currentZoneName.trim()) {
       setError("Please enter a zone name");
       setTimeout(() => setError(null), 3000);
@@ -113,42 +137,39 @@ function AdminDashboardPage() {
       return;
     }
 
-    // Create new zone with mock data
-    const newZone = {
-      _id: `z${Date.now()}`,
+    // Create zone via API
+    const zoneData = {
       name: currentZoneName,
       grid_cells: gridSelection,
     };
 
-    // Update zones for this venue
-    setAllZones((prev) => ({
-      ...prev,
-      [selectedVenue._id]: [...(prev[selectedVenue._id] || []), newZone],
-    }));
-
-    setSuccess("Zone created successfully!");
-    setCurrentZoneName("");
-    setIsDefiningZone(false);
-    setError(null);
-
-    setTimeout(() => setSuccess(null), 3000);
+    const result = await createZone(selectedVenue._id, zoneData);
+    
+    if (result.success) {
+      setSuccess("Zone saved successfully!");
+      setCurrentZoneName("");
+      setIsDefiningZone(false);
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      setError(result.message || "Failed to save zone");
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
-  const handleDeleteZone = (zoneId) => {
-    if (!confirm("Are you sure you want to delete this zone?")) {
+  const handleDeleteZone = async (zoneId) => {
+    if (!window.confirm("Are you sure you want to delete this zone?")) {
       return;
     }
 
-    // Remove zone from venue's zones
-    setAllZones((prev) => ({
-      ...prev,
-      [selectedVenue._id]: prev[selectedVenue._id].filter((z) => z._id !== zoneId),
-    }));
-
-    setSuccess("Zone deleted successfully!");
-    setError(null);
-
-    setTimeout(() => setSuccess(null), 3000);
+    const result = await deleteZone(selectedVenue._id, zoneId);
+    
+    if (result.success) {
+      setSuccess("Zone deleted successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } else {
+      setError(result.message || "Failed to delete zone");
+      setTimeout(() => setError(null), 3000);
+    }
   };
 
   return (
@@ -186,10 +207,10 @@ function AdminDashboardPage() {
         {/* Venue Selector */}
         <div className="mb-6">
           <VenueSelector
-            venues={venues}
+            venues={venues && venues.length > 0 ? venues : MOCK_VENUES}
             selectedVenue={selectedVenue}
             onSelectVenue={setSelectedVenue}
-            loading={loading}
+            loading={venuesLoading}
           />
         </div>
 
@@ -229,14 +250,14 @@ function AdminDashboardPage() {
 
                 <ZoneDefinition
                   venue={selectedVenue}
-                  zones={zones}
+                  zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
                   isDefiningZone={isDefiningZone}
                   onSaveZone={handleSaveZone}
                   onCancelDefine={() => {
                     setIsDefiningZone(false);
                     setCurrentZoneName("");
                   }}
-                  loading={loading}
+                  loading={zonesLoading}
                 />
               </div>
             </div>
@@ -246,19 +267,19 @@ function AdminDashboardPage() {
               <div className="bg-surface rounded-lg p-6 border border-primary/20">
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                   <MapPin className="text-accent" size={24} />
-                  Defined Zones ({zones.length})
+                  Defined Zones ({(zones && zones.length) || 0})
                 </h2>
                 <ZoneList
-                  zones={zones}
+                  zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
                   onDeleteZone={handleDeleteZone}
-                  loading={loading}
+                  loading={zonesLoading}
                 />
               </div>
             </div>
           </div>
         )}
 
-        {!selectedVenue && !loading && (
+        {!selectedVenue && !venuesLoading && (
           <div className="text-center py-12 bg-surface rounded-lg border border-primary/20">
             <Grid3x3 className="mx-auto text-secondary mb-4" size={48} />
             <p className="text-secondary text-lg">Select a venue to start defining zones</p>

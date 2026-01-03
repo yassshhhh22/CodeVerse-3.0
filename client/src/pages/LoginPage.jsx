@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
+import { useAuthStore } from "../store/AuthStore";
 
 function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login, isLoading, error } = useAuthStore();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle authentication logic here
-    console.log("Form submitted:", formData);
-    navigate("/dashboard");
+    const result = await login(formData);
+    if (result.success) {
+      // Redirect based on user role
+      if (result.user?.role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
+    }
   };
 
   const handleChange = (e) => {
@@ -139,6 +147,13 @@ function LoginPage() {
             </p>
           </div>
 
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p className="text-red-500 text-sm">{error}</p>
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -208,9 +223,10 @@ function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 text-sm bg-primary text-background font-bold rounded-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-[1.02] transition-all duration-300"
+              disabled={isLoading}
+              className="w-full py-3 text-sm bg-primary text-background font-bold rounded-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              Log In
+              {isLoading ? "Logging in..." : "Log In"}
             </button>
           </form>
 
