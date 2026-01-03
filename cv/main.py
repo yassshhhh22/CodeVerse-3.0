@@ -22,20 +22,21 @@ class CrowdMonitoringApp:
     
     def __init__(self, video_source=None):
         print("\n" + "="*60)
-        print("🎥 CROWD MONITORING - COMPUTER VISION MODULE")
-        print("="*60 + "\n")
-        
-        # Initialize components
-        print("Initializing components...")
+        print("CROWD MONITORING - COMPUTER VISION MODULE")
+        print("="*60)
         
         # Override video source if provided
         if video_source is not None:
-            print(f"Using video source: {video_source}")
             CAMERA_CONFIG["source"] = video_source
         
+        print("\n[1/4] Initializing video reader...")
+        
         self.video_reader = VideoReader()
+        print("[2/4] Loading YOLOv8 model...")
         self.detector = PersonDetector()
+        print("[3/4] Building metadata pipeline...")
         self.metadata_builder = MetadataBuilder()
+        print("[4/4] Preparing WebSocket connection...")
         self.streamer = WebSocketStreamer()
         
         # Frame processing settings
@@ -66,8 +67,9 @@ class CrowdMonitoringApp:
         self.running = True
         signal.signal(signal.SIGINT, self._signal_handler)
         
-        print(f"\n✓ All components initialized")
-        print(f"📡 Metadata send interval: {self.send_interval} seconds")
+        print(f"\nInitialization complete")
+        print(f"  - Send interval: {self.send_interval}s")
+        print(f"  - Press Ctrl+C to stop")
     
     def _signal_handler(self, sig, frame):
         """Handle Ctrl+C gracefully"""
@@ -86,7 +88,7 @@ class CrowdMonitoringApp:
         
         if elapsed >= LOGGING_CONFIG["fps_interval"]:
             fps = self.fps_tracker["frame_count"] / elapsed
-            print(f"\n📊 FPS: {fps:.2f}")
+            print(f"\n[INFO] FPS: {fps:.2f}")
             
             # Reset
             self.fps_tracker["frame_count"] = 0
@@ -97,12 +99,13 @@ class CrowdMonitoringApp:
         
         # Connect to backend
         print("\n" + "-"*60)
+        print("Connecting to backend...")
         if not self.streamer.connect():
-            print("❌ Could not connect to backend. Exiting...")
+            print("[ERROR] Backend connection failed. Exiting...")
             return
         
         print("-"*60)
-        print("\n🚀 Starting video processing...\n")
+        print("\nProcessing started\n")
         
         self.last_send_time = time.time()
         
@@ -145,8 +148,12 @@ class CrowdMonitoringApp:
                 # Logging
                 if LOGGING_CONFIG["log_detections"]:
                     time_since_send = current_time - self.last_send_time
-                    print(f"Frame {self.frame_count} | People: {len(detections)} | Next send in: {self.send_interval - time_since_send:.1f}s", end="\r")
-               KeyboardInterrupt:
+                    print(f"Frame: {self.frame_count} | People: {len(detections)} | Next send: {self.send_interval - time_since_send:.1f}s", end="\r")
+                
+                # Update FPS
+                self._update_fps()
+        
+        except KeyboardInterrupt:
             print("\n\n⚠ Interrupted by user")
         
         except Exception as e:
@@ -184,7 +191,7 @@ class CrowdMonitoringApp:
         success = self.streamer.send_metadata(enriched_metadata)
         
         if success:
-            print(f"\n📤 Sent metadata | People: {enriched_metadata['detection_count']} | Avg: {avg_people:.1f} | Max: {self.interval_stats['max_people']}")
+            print(f"\n[SENT] People: {enriched_metadata['detection_count']} | Avg: {avg_people:.1f} | Max: {self.interval_stats['max_people']} | Min: {enriched_metadata['interval_stats']['min_people']}")
         
         # Reset interval stats
         self.interval_stats = {
@@ -193,7 +200,28 @@ class CrowdMonitoringApp:
             "max_people": 0,
             "min_people": float('inf')
         }
-                for det in detections:
+    
+    def _cleanup(self):
+        """Release all resources"""
+        print("\n\n" + "="*60)
+        print("STOPPING")
+        print("="*60)
+        
+        self.video_reader.release()
+        self.streamer.disconnect()
+        cv2.destroyAllWindows()
+        
+        # Final stats
+        total_time = time.time() - self.fps_tracker["start_time"]
+        avg_fps = self.frame_count / total_time if total_time > 0 else 0
+        
+        print(f"\nSession Summary:")
+        print(f"  - Frames processed: {self.frame_count}")
+        print(f"  - Duration: {total_time:.1f}s")
+        print(f"  - Average FPS: {avg_fps:.1f}")
+        print("\nShutdown complete\n")
+
+
 def parse_arguments():
     """Parse command-line arguments"""
     parser = argparse.ArgumentParser(
@@ -248,45 +276,6 @@ if __name__ == "__main__":
         print(f"\n📷 Using default camera (config.py setting)")
     
     # Run application
-    app = CrowdMonitoringApp(video_source=video_sourcengle(frame, (int(x), int(y)), (int(x+w), int(y+h)), (0, 255, 0), 2)
-                
-                cv2.imshow("Crowd Monitoring", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break
-                """
-        
-        except Exception as e:
-            print(f"\n❌ Error during processing: {e}")
-            import traceback
-            traceback.print_exc()
-        
-        finally:
-            self._cleanup()
-    
-    def _cleanup(self):
-        """Release all resources"""
-        print("\n\n" + "="*60)
-        print("🧹 Cleaning up...")
-        print("="*60)
-        
-        self.video_reader.release()
-        self.streamer.disconnect()
-        cv2.destroyAllWindows()
-        
-        # Final stats
-        total_time = time.time() - self.fps_tracker["start_time"]
-        avg_fps = self.frame_count / total_time if total_time > 0 else 0
-        
-        print(f"\n📈 Session Stats:")
-        print(f"  Total frames processed: {self.frame_count}")
-        print(f"  Total time: {total_time:.2f}s")
-        print(f"  Average FPS: {avg_fps:.2f}")
-        print("\n✅ Shutdown complete\n")
-
-
-# =====================================
-# ENTRY POINT
-# =====================================
-if __name__ == "__main__":
-    app = CrowdMonitoringApp()
+    app = CrowdMonitoringApp(video_source=video_source)
     app.run()
+

@@ -14,9 +14,10 @@ CAMERA_CONFIG = {
     # Video source - can be:
     # - 0 for default webcam
     # - 1, 2, etc. for other cameras
+    # - "video.mp4" for video file in cv/ folder
+    # - "path/to/video.mp4" for video file with full path
     # - "rtsp://..." for IP camera
-    # - "path/to/video.mp4" for recorded video
-    "source": 0,  # Change this based on your input
+    "source": 0,  # Default: webcam. For video file, use: "video.mp4"
     
     # Fixed resolution (all frames resized to this)
     "frame_width": 1280,

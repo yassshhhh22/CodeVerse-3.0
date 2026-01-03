@@ -23,10 +23,11 @@ def demo_mode(duration_seconds=30):
         duration_seconds: How long to run demo (default 30s)
     """
     print("\n" + "="*70)
-    print("🎬 DEMO MODE - Metadata Output Preview")
+    print("DEMO MODE - Metadata Preview")
     print("="*70)
-    print(f"\nRunning for {duration_seconds} seconds...")
-    print("Press Ctrl+C to stop early\n")
+    print(f"\nConfiguration:")
+    print(f"  - Duration: {duration_seconds}s")
+    print(f"  - Press Ctrl+C to stop\n")
     print("-"*70)
     
     # Initialize components
@@ -61,14 +62,14 @@ def demo_mode(duration_seconds=30):
             metadata = builder.build(detections, timestamp)
             
             # Print metadata (pretty formatted)
-            print(f"\n📹 Frame {frame_count} @ {timestamp.split('T')[1][:12]}")
-            print(f"   👥 People detected: {len(detections)}")
+            print(f"\n[Frame {frame_count}] Time: {timestamp.split('T')[1][:8]}")
+            print(f"  People detected: {len(detections)}")
             
             if len(detections) > 0:
-                print("   📦 Metadata:")
+                print(f"  Metadata:")
                 print(json.dumps(metadata, indent=2))
             else:
-                print("   ℹ️  No people detected")
+                print(f"  No people detected")
             
             print("-"*70)
             
@@ -87,14 +88,14 @@ def demo_mode(duration_seconds=30):
         avg_people = total_detections / (frame_count / 3) if frame_count > 0 else 0
         
         print("\n" + "="*70)
-        print("📊 Demo Statistics")
+        print("DEMO SUMMARY")
         print("="*70)
-        print(f"Duration: {elapsed:.2f}s")
-        print(f"Frames processed: {frame_count}")
-        print(f"Average FPS: {avg_fps:.2f}")
-        print(f"Total detections: {total_detections}")
-        print(f"Average people per frame: {avg_people:.1f}")
-        print("\n✅ Demo complete\n")
+        print(f"  - Duration: {elapsed:.1f}s")
+        print(f"  - Frames processed: {frame_count}")
+        print(f"  - Average FPS: {avg_fps:.1f}")
+        print(f"  - Total detections: {total_detections}")
+        print(f"  - Average per frame: {avg_people:.1f}")
+        print("\nDemo complete\n")
 
 
 if __name__ == "__main__":

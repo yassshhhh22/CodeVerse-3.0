@@ -19,10 +19,12 @@ class VisualTest:
     
     def __init__(self):
         print("\n" + "="*70)
-        print("📹 VISUAL CAMERA TEST")
+        print("VISUAL TEST - Live Camera Feed")
         print("="*70)
-        print("\nThis will show your camera feed with detection boxes.")
-        print("Press 'q' to quit, 's' to save a screenshot\n")
+        print("\nShowing camera feed with detection boxes")
+        print("Controls:")
+        print("  - Press 'q' to quit")
+        print("  - Press 's' to save screenshot\n")
         
         # Initialize components
         self.reader = VideoReader()
@@ -89,7 +91,7 @@ class VisualTest:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"screenshot_{timestamp}.jpg"
         cv2.imwrite(filename, frame)
-        print(f"\n📸 Screenshot saved: {filename}")
+        print(f"\n[INFO] Screenshot saved: {filename}")
     
     def run(self):
         """Main test loop"""
@@ -150,13 +152,13 @@ class VisualTest:
         avg_fps = self.frame_count / elapsed if elapsed > 0 else 0
         
         print("\n" + "="*70)
-        print("📊 Test Summary")
+        print("TEST SUMMARY")
         print("="*70)
-        print(f"Duration: {elapsed:.2f}s")
-        print(f"Frames: {self.frame_count}")
-        print(f"Average FPS: {avg_fps:.2f}")
-        print(f"Total Detections: {self.detection_count}")
-        print("\n✅ Visual test complete\n")
+        print(f"  - Duration: {elapsed:.1f}s")
+        print(f"  - Frames processed: {self.frame_count}")
+        print(f"  - Average FPS: {avg_fps:.1f}")
+        print(f"  - Total detections: {self.detection_count}")
+        print("\nVisual test complete\n")
 
 
 if __name__ == "__main__":
