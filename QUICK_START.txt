@@ -1,0 +1,107 @@
+"""
+Quick Start Guide - Real-Time Crowd Monitoring System
+======================================================
+
+STEP 1: Start Backend Server
+-----------------------------
+cd server
+npm run dev
+
+✓ Backend running on: http://localhost:5000
+✓ WebSocket endpoint: ws://localhost:5000
+✓ API endpoints: http://localhost:5000/api/*
+
+
+STEP 2: Start Frontend
+-----------------------
+cd client
+npm run dev
+
+✓ Frontend running on: http://localhost:5173
+✓ Login page: http://localhost:5173/login
+
+
+STEP 3: Start CV System
+------------------------
+cd cv
+python main.py
+
+OR with video file:
+python main.py --video video.mp4
+
+✓ CV connects to: http://localhost:5000 (WebSocket)
+✓ Sends metadata every 5 seconds
+✓ Auto-registers venue on first connection
+
+
+STEP 4: Login & Monitor
+------------------------
+1. Open http://localhost:5173
+2. Login with your credentials
+3. Go to Dashboard
+4. Select a venue/camera
+
+✓ You should see "LIVE" badge
+✓ Heatmap updates in real-time
+✓ Detection boxes appear
+✓ Alerts pop up when thresholds exceeded
+
+
+VERIFICATION CHECKLIST
+----------------------
+□ Backend shows: "Server is ready"
+□ Frontend shows: "LIVE" badge (green)
+□ CV shows: "✓ Connected to backend"
+□ Browser console shows: "📊 Grid density update received"
+□ Detections render as white boxes on canvas
+□ Alert toast appears when threshold exceeded
+
+
+COMMON ISSUES & FIXES
+---------------------
+Issue: WebSocket won't connect
+Fix: Check backend is running on port 5000, check browser console
+
+Issue: CV won't connect
+Fix: Verify cv/config.py has "url": "http://localhost:5000"
+
+Issue: No detections showing
+Fix: Make sure camera/video has people visible, check CV terminal output
+
+Issue: Alerts not showing
+Fix: Set lower thresholds in Admin Panel, verify zones are defined
+
+
+ADMIN TASKS
+-----------
+To create zones:
+1. Login as admin
+2. Go to /admin
+3. Select venue
+4. Click "New Zone"
+5. Draw zone on grid
+6. Save
+
+To set thresholds:
+- Use threshold API endpoints
+- Or set in Admin Panel (if UI exists)
+- Default: warning=75%, critical=90%
+
+
+TESTING WITH VIDEO
+------------------
+1. Place a video file in cv/ folder
+2. Run: python main.py --video your_video.mp4
+3. System processes video and streams to backend
+4. Dashboard shows real-time updates
+
+
+SUCCESS INDICATORS
+------------------
+✓ Green "LIVE" badge in dashboard
+✓ People count updates automatically
+✓ Heatmap changes color dynamically
+✓ Alert toast pops up with sound
+✓ "just now" timestamp in connection status
+✓ Detection boxes drawn on canvas
+"""

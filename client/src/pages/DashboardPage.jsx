@@ -19,26 +19,78 @@ import { useVenueStore } from "../store/VenueStore";
 import { useAlertStore } from "../store/AlertStore";
 import { useGridStore } from "../store/GridStore";
 import { useAuthStore } from "../store/AuthStore";
+import { useWebSocket } from "../hooks/useWebSocket";
 import UserMenu from "../components/UserMenu";
+import AlertToast from "../components/AlertToast";
+import ConnectionStatus from "../components/ConnectionStatus";
 
 function DashboardPage() {
-  const [selectedCamera, setSelectedCamera] = useState("camera-1");
+  const [selectedCamera, setSelectedCamera] = useState(null);
   const [systemStatus, setSystemStatus] = useState("online"); // online, delayed, offline
   const [selectedZone, setSelectedZone] = useState("stage");
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [realtimeAlerts, setRealtimeAlerts] = useState([]);
+  const [showToast, setShowToast] = useState(false);
+  const [toastAlert, setToastAlert] = useState(null);
 
   // Zustand stores
   const { venues, fetchVenues } = useVenueStore();
   const { alerts, fetchAlerts } = useAlertStore();
-  const { gridDensity, fetchGridDensity } = useGridStore();
   const { user, fetchMe } = useAuthStore();
 
-  // Fetch data on mount
+  // Get selected venue camera_id for WebSocket subscription
+  const selectedVenue = venues?.find(v => v._id === selectedCamera) || venues?.[0] || null;
+  const selectedCameraId = selectedVenue?.camera_id || null;
+
+  // WebSocket hook for real-time updates
+  const {
+    isConnected: wsConnected,
+    isReconnecting: wsReconnecting,
+    gridDensity: wsGridDensity,
+    zoneDensities: wsZoneDensities,
+    latestAlert: wsLatestAlert,
+    detections: wsDetections,
+    lastDataReceived,
+    clearAlert,
+  } = useWebSocket(selectedCameraId, {
+    autoConnect: true,
+    autoSubscribe: true,
+    onAlert: (alert) => {
+      // Show toast notification
+      setToastAlert(alert);
+      setShowToast(true);
+      
+      // Play alert sound
+      try {
+        const audioData = `data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZizcIGWi77fajUBAWXbfq66xHFQxNo+H0`;
+        const audio = new Audio(audioData);
+        audio.volume = 0.3;
+        audio.play().catch(e => console.log("Audio play failed:", e));
+      } catch (e) {
+        console.log("Audio not supported");
+      }
+      
+      // Add to realtime alerts list
+      setRealtimeAlerts(prev => [alert, ...prev].slice(0, 10));
+      
+      // Also fetch updated alerts from API
+      fetchAlerts({ limit: 10, acknowledged: "false" });
+    },
+  });
+
+  // Fetch initial data on mount
   useEffect(() => {
     fetchMe();
     fetchVenues();
-    fetchAlerts({ limit: 10 });
+    fetchAlerts({ limit: 10, acknowledged: "false" });
   }, []);
+
+  // Set default selected camera when venues load
+  useEffect(() => {
+    if (venues && venues.length > 0 && !selectedCamera) {
+      setSelectedCamera(venues[0]._id);
+    }
+  }, [venues, selectedCamera]);
 
   // Update time every second
   useEffect(() => {
@@ -68,86 +120,36 @@ function DashboardPage() {
     });
   };
 
-  // Use only frame 5 data with 20 detections
-  const frameDetections = [
-    { x: 1185, y: 465, w: 93, h: 210 },
-    { x: 118, y: 380, w: 71, h: 236 },
-    { x: 182, y: 380, w: 79, h: 227 },
-    { x: 1102, y: 463, w: 84, h: 210 },
-    { x: 0, y: 589, w: 102, h: 129 },
-    { x: 431, y: 416, w: 70, h: 208 },
-    { x: 353, y: 396, w: 70, h: 239 },
-    { x: 1031, y: 481, w: 75, h: 205 },
-    { x: 500, y: 342, w: 57, h: 210 },
-    { x: 241, y: 244, w: 58, h: 178 },
-    { x: 952, y: 317, w: 73, h: 188 },
-    { x: 571, y: 364, w: 68, h: 225 },
-    { x: 763, y: 260, w: 57, h: 186 },
-    { x: 644, y: 362, w: 70, h: 219 },
-    { x: 190, y: 252, w: 55, h: 168 },
-    { x: 464, y: 195, w: 47, h: 131 },
-    { x: 421, y: 279, w: 67, h: 157 },
-    { x: 835, y: 201, w: 55, h: 156 },
-    { x: 519, y: 177, w: 47, h: 136 },
-    { x: 719, y: 234, w: 48, h: 172 },
-  ];
+  // Use real-time detections from WebSocket
+  const frameDetections = wsDetections || [];
 
-  // Fixed venue dimensions (1280x720 like CV system)
-  const VENUE_WIDTH = 1280;
-  const VENUE_HEIGHT = 720;
-  const GRID_SIZE = 50;
+  // Get venue dimensions from selected venue or use defaults
+  const VENUE_WIDTH = selectedVenue?.frame_width || 1280;
+  const VENUE_HEIGHT = selectedVenue?.frame_height || 720;
+  const GRID_SIZE = selectedVenue?.grid_rows || 50;
   const CELL_WIDTH = VENUE_WIDTH / GRID_SIZE;
   const CELL_HEIGHT = VENUE_HEIGHT / GRID_SIZE;
 
   const summaryData = {
     totalPeople: frameDetections.length,
-    activeCameras: 4,
-    totalCameras: 5,
-    warningZones: 1,
-    criticalZones: 1,
+    activeCameras: venues?.filter(v => v.status === 'active').length || 0,
+    totalCameras: venues?.length || 0,
+    warningZones: alerts?.filter(a => a.severity === 'warning' && !a.acknowledged_by).length || 0,
+    criticalZones: alerts?.filter(a => a.severity === 'critical' && !a.acknowledged_by).length || 0,
   };
 
-  // Calculate distance-based heatmap with smooth gradients
-  const calculateHeatmapGrid = () => {
-    const grid = Array(GRID_SIZE)
-      .fill(0)
-      .map(() => Array(GRID_SIZE).fill(0));
-
-    // For each grid cell, calculate heat based on distance to all detected people
-    for (let row = 0; row < GRID_SIZE; row++) {
-      for (let col = 0; col < GRID_SIZE; col++) {
-        const cellCenterX = col * CELL_WIDTH + CELL_WIDTH / 2;
-        const cellCenterY = row * CELL_HEIGHT + CELL_HEIGHT / 2;
-
-        let totalHeat = 0;
-
-        // Calculate heat contribution from each detected person
-        frameDetections.forEach((det) => {
-          const personX = det.x + det.w / 2;
-          const personY = det.y + det.h / 2;
-
-          // Calculate distance from cell to person
-          const dx = cellCenterX - personX;
-          const dy = cellCenterY - personY;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          // Heat decreases with distance (inverse relationship)
-          // Maximum influence radius: ~200 pixels
-          const maxRadius = 200;
-          if (distance < maxRadius) {
-            const heat = Math.pow(1 - distance / maxRadius, 2);
-            totalHeat += heat;
-          }
-        });
-
-        grid[row][col] = totalHeat;
-      }
+  // Use real grid density data from WebSocket or fallback to empty grid
+  const getHeatmapGrid = () => {
+    if (!wsGridDensity?.matrix?.length) {
+      // Return empty grid if no data
+      return Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
     }
 
-    return grid;
+    // Backend returns matrix as 2D array [rows][cols]
+    return wsGridDensity.matrix;
   };
 
-  const heatmapGrid = calculateHeatmapGrid();
+  const heatmapGrid = getHeatmapGrid();
   const maxHeat = Math.max(...heatmapGrid.flat(), 0.1);
 
   // Get smooth gradient color based on heat intensity
@@ -273,6 +275,17 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen w-full bg-black text-text relative font-serif">
+      {/* Alert Toast Notification */}
+      {showToast && toastAlert && (
+        <AlertToast 
+          alert={toastAlert} 
+          onClose={() => {
+            setShowToast(false);
+            setToastAlert(null);
+          }}
+        />
+      )}
+      
       {/* Background graphics */}
       <div className="fixed inset-0 z-0 opacity-30">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-primary/30 via-primary/15 to-transparent rounded-full blur-3xl"></div>
@@ -309,9 +322,17 @@ function DashboardPage() {
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
+              {/* WebSocket Connection Status */}
+              <ConnectionStatus 
+                wsConnected={wsConnected}
+                wsReconnecting={wsReconnecting}
+                venueConnected={!!selectedCameraId && wsConnected}
+                lastDataReceived={lastDataReceived}
+              />
+              
               <div className="hidden sm:flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg">
                 <span className="text-xs sm:text-sm">
-                  {getStatusIcon(systemStatus)} All Cameras Online
+                  {getStatusIcon(systemStatus)} {summaryData.activeCameras}/{summaryData.totalCameras} Cameras
                 </span>
               </div>
               <UserMenu />

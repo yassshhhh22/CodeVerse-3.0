@@ -131,6 +131,8 @@ const handleCVMetadata = async (metadata) => {
     venue_id: venue._id,
     camera_id,
     matrix,
+    detections,
+    detection_count,
     timestamp,
   });
 
