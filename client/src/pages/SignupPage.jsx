@@ -10,12 +10,14 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { useAuthStore } from "../store/AuthStore";
 
 function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const navigate = useNavigate();
+  const { register, isLoading, error } = useAuthStore();
 
   const [formData, setFormData] = useState({
     username: "",
@@ -23,12 +25,27 @@ function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+  const [validationError, setValidationError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle authentication logic here
-    console.log("Form submitted:", formData);
-    navigate("/dashboard");
+    setValidationError("");
+    
+    if (formData.password !== formData.confirmPassword) {
+      setValidationError("Passwords do not match");
+      return;
+    }
+    
+    if (passwordStrength < 2) {
+      setValidationError("Password is too weak. Please use a stronger password.");
+      return;
+    }
+    
+    const { confirmPassword, ...registerData } = formData;
+    const result = await register({ ...registerData, name: registerData.username });
+    if (result.success) {
+      navigate("/dashboard");
+    }
   };
 
   const handleChange = (e) => {
@@ -169,6 +186,13 @@ function SignupPage() {
               Sign up to get started with CrowdCrawl
             </p>
           </div>
+
+          {/* Error Display */}
+          {(error || validationError) && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p className="text-red-500 text-sm">{error || validationError}</p>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -351,9 +375,10 @@ function SignupPage() {
 
             <button
               type="submit"
-              className="w-full py-3 text-sm bg-primary text-background font-bold rounded-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-[1.02] transition-all duration-300"
+              disabled={isLoading}
+              className="w-full py-3 text-sm bg-primary text-background font-bold rounded-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-[1.02] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              Sign Up
+              {isLoading ? "Creating account..." : "Sign Up"}
             </button>
           </form>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,10 +11,31 @@ import {
   Download,
   Filter,
 } from "lucide-react";
+import { useAnalyticsStore } from "../store/AnalyticsStore";
+import { useVenueStore } from "../store/VenueStore";
 
 function HistoricalAnalysisPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("7days");
   const [selectedMetric, setSelectedMetric] = useState("crowd");
+
+  // Zustand stores
+  const { venueAnalytics, fetchVenueAnalytics, isLoading } = useAnalyticsStore();
+  const { venues, currentVenue, fetchVenues } = useVenueStore();
+
+  // Fetch data on mount
+  useEffect(() => {
+    fetchVenues();
+  }, []);
+
+  // Fetch analytics when venue or period changes
+  useEffect(() => {
+    if (currentVenue?._id) {
+      fetchVenueAnalytics(currentVenue._id, {
+        period: selectedPeriod,
+        metric: selectedMetric,
+      });
+    }
+  }, [currentVenue?._id, selectedPeriod, selectedMetric]);
 
   // Sample historical data
   const historicalData = {
