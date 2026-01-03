@@ -1,7 +1,13 @@
-/**
- * Grid Routes
- * GET /api/venues/:id/grid-density (fetch current 10x10 matrix)
- * GET /api/venues/:id/zone-densities (fetch zone densities)
- */
+import express from "express";
+import {
+  getGridDensity,
+  getZoneDensities,
+} from "../controllers/gridController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
-// TODO: Grid routes configuration
+const router = express.Router({ mergeParams: true });
+
+router.get("/density", protect, getGridDensity);
+router.get("/zone-densities", protect, getZoneDensities);
+
+export default router;

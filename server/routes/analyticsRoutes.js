@@ -1,8 +1,15 @@
-/**
- * Analytics Routes
- * GET /api/venues/:id/analytics (hourly density trends)
- * GET /api/venues/:id/zones/:zoneId/analytics (zone trends)
- * GET /api/venues/:id/report (daily/weekly summary)
- */
+import express from "express";
+import {
+  getVenueAnalytics,
+  getZoneAnalytics,
+  getVenueReport,
+} from "../controllers/analyticsController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
-// TODO: Analytics routes configuration
+const router = express.Router({ mergeParams: true });
+
+router.get("/", protect, getVenueAnalytics);
+router.get("/zone/:zoneId", protect, getZoneAnalytics);
+router.get("/report", protect, getVenueReport);
+
+export default router;

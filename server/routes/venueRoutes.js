@@ -1,10 +1,20 @@
-/**
- * Venue Routes
- * POST /api/venues (admin: create)
- * GET /api/venues (list all)
- * GET /api/venues/:id (fetch single)
- * PUT /api/venues/:id (admin: update)
- * DELETE /api/venues/:id (admin: delete)
- */
+import express from "express";
+import {
+  createVenue,
+  getVenues,
+  getVenueById,
+  updateVenue,
+  deleteVenue,
+} from "../controllers/venueController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/roleMiddleware.js";
 
-// TODO: Venue routes configuration
+const router = express.Router();
+
+router.post("/", protect, requireAdmin, createVenue);
+router.get("/", protect, getVenues);
+router.get("/:id", protect, getVenueById);
+router.put("/:id", protect, requireAdmin, updateVenue);
+router.delete("/:id", protect, requireAdmin, deleteVenue);
+
+export default router;

@@ -1,10 +1,20 @@
-/**
- * Zone Routes
- * POST /api/venues/:id/zones (admin: create)
- * GET /api/venues/:id/zones (list)
- * GET /api/venues/:id/zones/:zoneId (fetch single)
- * PUT /api/venues/:id/zones/:zoneId (admin: update)
- * DELETE /api/venues/:id/zones/:zoneId (admin: delete)
- */
+import express from "express";
+import {
+  createZone,
+  getZonesByVenue,
+  getZoneById,
+  updateZone,
+  deleteZone,
+} from "../controllers/zoneController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { requireAdmin } from "../middleware/roleMiddleware.js";
 
-// TODO: Zone routes configuration
+const router = express.Router({ mergeParams: true });
+
+router.post("/", protect, requireAdmin, createZone);
+router.get("/", protect, getZonesByVenue);
+router.get("/:zoneId", protect, getZoneById);
+router.put("/:zoneId", protect, requireAdmin, updateZone);
+router.delete("/:zoneId", protect, requireAdmin, deleteZone);
+
+export default router;

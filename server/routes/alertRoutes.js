@@ -1,8 +1,15 @@
-/**
- * Alert Routes
- * GET /api/alerts (fetch alert history with filters)
- * GET /api/alerts/:id (fetch single alert)
- * PUT /api/alerts/:id/acknowledge (mark alert as seen)
- */
+import express from "express";
+import {
+  getAlerts,
+  getAlertById,
+  acknowledgeAlert,
+} from "../controllers/alertController.js";
+import { protect } from "../middleware/authMiddleware.js";
 
-// TODO: Alert routes configuration
+const router = express.Router();
+
+router.get("/", protect, getAlerts);
+router.get("/:id", protect, getAlertById);
+router.put("/:id/acknowledge", protect, acknowledgeAlert);
+
+export default router;
