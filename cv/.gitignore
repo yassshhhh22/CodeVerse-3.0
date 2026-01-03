@@ -1,0 +1,34 @@
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# YOLOv8 Models (downloaded during runtime)
+yolov8*.pt
+*.weights
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Test videos/outputs
+test_videos/
+output/
+recordings/
+
+# Environment variables
+.env
+.env.local

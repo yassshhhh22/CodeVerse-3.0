@@ -1,0 +1,20 @@
+# Computer Vision Module Dependencies
+# ====================================
+
+# Core CV and ML
+opencv-python
+ultralytics
+torch
+torchvision
+
+# WebSocket communication
+python-socketio[client]
+websocket-client
+
+# Utilities
+python-engineio
+numpy
+pillow
+
+# Optional but recommended
+# python-dotenv  # For environment variables

@@ -8,6 +8,7 @@ import cv2
 import time
 import signal
 import sys
+import argparse
 
 from config import CAMERA_CONFIG, LOGGING_CONFIG
 from video_reader import VideoReader
@@ -19,13 +20,18 @@ from websocket_streamer import WebSocketStreamer
 class CrowdMonitoringApp:
     """Main application class"""
     
-    def __init__(self):
+    def __init__(self, video_source=None):
         print("\n" + "="*60)
         print("🎥 CROWD MONITORING - COMPUTER VISION MODULE")
         print("="*60 + "\n")
         
         # Initialize components
         print("Initializing components...")
+        
+        # Override video source if provided
+        if video_source is not None:
+            print(f"Using video source: {video_source}")
+            CAMERA_CONFIG["source"] = video_source
         
         self.video_reader = VideoReader()
         self.detector = PersonDetector()
@@ -36,6 +42,11 @@ class CrowdMonitoringApp:
         self.frame_skip = CAMERA_CONFIG["frame_skip"]
         self.frame_count = 0
         
+        # Metadata sending interval (5 seconds)
+        self.send_interval = 5.0
+        self.last_send_time = 0
+        self.latest_metadata = None
+        
         # Performance tracking
         self.fps_tracker = {
             "start_time": time.time(),
@@ -43,11 +54,20 @@ class CrowdMonitoringApp:
             "last_log_time": time.time()
         }
         
+        # Statistics for aggregation
+        self.interval_stats = {
+            "total_detections": 0,
+            "frame_count": 0,
+            "max_people": 0,
+            "min_people": float('inf')
+        }
+        
         # Graceful shutdown
         self.running = True
         signal.signal(signal.SIGINT, self._signal_handler)
         
-        print("\n✓ All components initialized")
+        print(f"\n✓ All components initialized")
+        print(f"📡 Metadata send interval: {self.send_interval} seconds")
     
     def _signal_handler(self, sig, frame):
         """Handle Ctrl+C gracefully"""
@@ -84,13 +104,15 @@ class CrowdMonitoringApp:
         print("-"*60)
         print("\n🚀 Starting video processing...\n")
         
+        self.last_send_time = time.time()
+        
         try:
             while self.running:
                 # Read and normalize frame
                 frame, timestamp = self.video_reader.read_and_normalize()
                 
                 if frame is None:
-                    print("⚠ No frame available. End of video or camera disconnected.")
+                    print("\n⚠ No frame available. End of video or camera disconnected.")
                     break
                 
                 # Frame sampling - skip frames to reduce processing load
@@ -104,22 +126,129 @@ class CrowdMonitoringApp:
                 # Build metadata
                 metadata = self.metadata_builder.build(detections, timestamp)
                 
-                # Send to backend
-                self.streamer.send_metadata(metadata)
+                # Update latest metadata (always keep most recent)
+                self.latest_metadata = metadata
+                
+                # Update interval statistics
+                num_people = len(detections)
+                self.interval_stats["total_detections"] += num_people
+                self.interval_stats["frame_count"] += 1
+                self.interval_stats["max_people"] = max(self.interval_stats["max_people"], num_people)
+                self.interval_stats["min_people"] = min(self.interval_stats["min_people"], num_people)
+                
+                # Check if it's time to send metadata
+                current_time = time.time()
+                if current_time - self.last_send_time >= self.send_interval:
+                    self._send_aggregated_metadata()
+                    self.last_send_time = current_time
                 
                 # Logging
                 if LOGGING_CONFIG["log_detections"]:
-                    print(f"Frame {self.frame_count} | Detected: {len(detections)} people", end="\r")
-                
-                # Update FPS
-                self._update_fps()
-                
-                # Optional: Display frame (for debugging)
-                # Uncomment below to show video with bounding boxes
-                """
+                    time_since_send = current_time - self.last_send_time
+                    print(f"Frame {self.frame_count} | People: {len(detections)} | Next send in: {self.send_interval - time_since_send:.1f}s", end="\r")
+               KeyboardInterrupt:
+            print("\n\n⚠ Interrupted by user")
+        
+        except Exception as e:
+            print(f"\n❌ Error during processing: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        finally:
+            # Send final metadata if any
+            if self.latest_metadata:
+                print("\n📤 Sending final metadata...")
+                self.streamer.send_metadata(self.latest_metadata)
+            
+            self._cleanup()
+    
+    def _send_aggregated_metadata(self):
+        """Send latest metadata with interval statistics"""
+        if not self.latest_metadata:
+            return
+        
+        # Calculate aggregated stats
+        avg_people = (self.interval_stats["total_detections"] / 
+                     self.interval_stats["frame_count"]) if self.interval_stats["frame_count"] > 0 else 0
+        
+        # Add interval stats to metadata
+        enriched_metadata = self.latest_metadata.copy()
+        enriched_metadata["interval_stats"] = {
+            "avg_people": round(avg_people, 2),
+            "max_people": self.interval_stats["max_people"],
+            "min_people": self.interval_stats["min_people"] if self.interval_stats["min_people"] != float('inf') else 0,
+            "interval_seconds": self.send_interval
+        }
+        
+        # Send to backend
+        success = self.streamer.send_metadata(enriched_metadata)
+        
+        if success:
+            print(f"\n📤 Sent metadata | People: {enriched_metadata['detection_count']} | Avg: {avg_people:.1f} | Max: {self.interval_stats['max_people']}")
+        
+        # Reset interval stats
+        self.interval_stats = {
+            "total_detections": 0,
+            "frame_count": 0,
+            "max_people": 0,
+            "min_people": float('inf')
+        }
                 for det in detections:
-                    x, y, w, h = det["x"], det["y"], det["w"], det["h"]
-                    cv2.rectangle(frame, (int(x), int(y)), (int(x+w), int(y+h)), (0, 255, 0), 2)
+def parse_arguments():
+    """Parse command-line arguments"""
+    parser = argparse.ArgumentParser(
+        description='Crowd Monitoring CV Module - Person Detection & Tracking',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py                           # Use webcam (default)
+  python main.py --video video.mp4         # Use video file
+  python main.py --video path/to/file.mp4  # Use video file with path
+  python main.py --camera 1                # Use camera index 1
+  python main.py --rtsp rtsp://ip:port/... # Use IP camera
+        """
+    )
+    
+    source_group = parser.add_mutually_exclusive_group()
+    source_group.add_argument(
+        '--video', '-v',
+        type=str,
+        help='Path to video file (e.g., video.mp4, recordings/crowd.avi)'
+    )
+    source_group.add_argument(
+        '--camera', '-c',
+        type=int,
+        help='Camera index (e.g., 0 for default, 1 for second camera)'
+    )
+    source_group.add_argument(
+        '--rtsp', '-r',
+        type=str,
+        help='RTSP stream URL for IP camera'
+    )
+    
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    # Parse command-line arguments
+    args = parse_arguments()
+    
+    # Determine video source
+    video_source = None
+    if args.video:
+        video_source = args.video
+        print(f"\n📹 Using video file: {video_source}")
+    elif args.camera is not None:
+        video_source = args.camera
+        print(f"\n📷 Using camera index: {video_source}")
+    elif args.rtsp:
+        video_source = args.rtsp
+        print(f"\n📡 Using RTSP stream: {video_source}")
+    else:
+        print(f"\n📷 Using default camera (config.py setting)")
+    
+    # Run application
+    app = CrowdMonitoringApp(video_source=video_sourcengle(frame, (int(x), int(y)), (int(x+w), int(y+h)), (0, 255, 0), 2)
                 
                 cv2.imshow("Crowd Monitoring", frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
