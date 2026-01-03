@@ -1,6 +1,18 @@
-/**
- * Threshold Default Values
- * Default warning and critical threshold values for venues and zones
- */
+export const DEFAULT_VENUE_THRESHOLDS = {
+  WARNING_LEVEL: 25,
+  CRITICAL_LEVEL: 40,
+};
 
-// TODO: Define default threshold values
+export const DEFAULT_ZONE_THRESHOLDS = {
+  WARNING_LEVEL: 8,
+  CRITICAL_LEVEL: 12,
+};
+
+export const THRESHOLD_RANGES = {
+  MIN_WARNING: 1,
+  MAX_WARNING: 100,
+  MIN_CRITICAL: 1,
+  MAX_CRITICAL: 150,
+};
+
+export const ALERT_COOLDOWN_MINUTES = 5;

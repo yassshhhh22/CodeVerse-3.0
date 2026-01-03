@@ -1,7 +1,15 @@
-/**
- * Alert Type Constants
- * Defines all possible alert types and severities
- * ALERT_WARNING, ALERT_CRITICAL, ALERT_RESOLVED, etc.
- */
+export const ALERT_SEVERITY = {
+  WARNING: "warning",
+  CRITICAL: "critical",
+};
 
-// TODO: Define alert type constants
+export const ALERT_STATUS = {
+  ACTIVE: "active",
+  ACKNOWLEDGED: "acknowledged",
+  RESOLVED: "resolved",
+};
+
+export const ALERT_THRESHOLD_TYPE = {
+  VENUE: "venue",
+  ZONE: "zone",
+};

@@ -16,16 +16,15 @@ import { RATE_LIMIT } from "./constants/index.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import venueRoutes from "./routes/venueRoutes.js";
+import zoneRoutes from "./routes/zoneRoutes.js";
+import thresholdRoutes from "./routes/thresholdRoutes.js";
+import gridRoutes from "./routes/gridRoutes.js";
+import alertRoutes from "./routes/alertRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
 
 const app = express();
 const httpServer = createServer(app);
-
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
-    credentials: true,
-  },
-});
 
 app.set("trust proxy", 1);
 
@@ -68,6 +67,12 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/venues", venueRoutes);
+app.use("/api/venues/:id/zones", zoneRoutes);
+app.use("/api/venues/:id/thresholds", thresholdRoutes);
+app.use("/api/venues/:id/grid", gridRoutes);
+app.use("/api/venues/:id/analytics", analyticsRoutes);
+app.use("/api/alerts", alertRoutes);
 
 app.get("/health", (req, res) => {
   res.status(200).json({
@@ -80,35 +85,21 @@ app.get("/health", (req, res) => {
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to Hackathon API",
+    message: "Welcome to Crowd Monitoring System API",
     version: "1.0.0",
     endpoints: {
       health: "/health",
       auth: "/api/auth",
       users: "/api/users",
-      upload: "/api/upload",
+      venues: "/api/venues",
+      zones: "/api/venues/:id/zones",
+      thresholds: "/api/venues/:id/thresholds",
+      grid: "/api/venues/:id/grid",
+      analytics: "/api/venues/:id/analytics",
+      alerts: "/api/alerts",
     },
   });
 });
-
-io.on("connection", (socket) => {
-  logger.info(`New client connected: ${socket.id}`);
-
-  socket.on("join-room", (roomId) => {
-    socket.join(roomId);
-    logger.info(`Socket ${socket.id} joined room ${roomId}`);
-  });
-
-  socket.on("send-message", (data) => {
-    io.to(data.room).emit("receive-message", data);
-  });
-
-  socket.on("disconnect", () => {
-    logger.info(`Client disconnected: ${socket.id}`);
-  });
-});
-
-app.set("io", io);
 
 app.use(notFound);
 app.use(errorHandler);

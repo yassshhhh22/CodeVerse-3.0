@@ -63,7 +63,6 @@ const venueSchema = new mongoose.Schema(
   }
 );
 
-venueSchema.index({ camera_id: 1 }, { unique: true });
 venueSchema.index({ created_by: 1 });
 venueSchema.index({ status: 1 });
 
