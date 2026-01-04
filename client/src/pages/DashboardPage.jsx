@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Camera,
@@ -34,8 +34,6 @@ function DashboardPage() {
   const [realtimeAlerts, setRealtimeAlerts] = useState([]);
   const [showToast, setShowToast] = useState(false);
   const [toastAlert, setToastAlert] = useState(null);
-  const canvasRef = useRef(null);
-  const overlayCanvasRef = useRef(null);
 
   // Zustand stores
   const { venues, fetchVenues } = useVenueStore();
@@ -187,6 +185,26 @@ function DashboardPage() {
   const heatmapGrid = getHeatmapGrid();
   const maxHeat = Math.max(...heatmapGrid.flat(), 0.1);
 
+  // Mark detections that collide (overlapping boxes)
+  const getCollidingDetections = () => {
+    const colliding = new Set();
+    for (let i = 0; i < frameDetections.length; i++) {
+      const a = frameDetections[i];
+      for (let j = i + 1; j < frameDetections.length; j++) {
+        const b = frameDetections[j];
+        const overlapX = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
+        const overlapY = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+        if (overlapX > 0 && overlapY > 0) {
+          colliding.add(i);
+          colliding.add(j);
+        }
+      }
+    }
+    return colliding;
+  };
+
+  const collidingDetections = getCollidingDetections();
+
   // Get smooth gradient color based on heat intensity
   const getHeatmapColor = (row, col) => {
     const heat = heatmapGrid[row][col];
@@ -216,106 +234,6 @@ function DashboardPage() {
       return `rgb(${r}, ${g}, 0)`;
     }
   };
-
-  // Get color as RGB array for canvas drawing
-  const getHeatmapColorRGB = (intensity) => {
-    // Smooth color interpolation: green -> yellow -> orange -> red
-    if (intensity < 0.1) {
-      const green = Math.floor(100 + intensity * 500);
-      return [0, green, 0];
-    } else if (intensity < 0.3) {
-      const t = (intensity - 0.1) / 0.2;
-      const r = Math.floor(t * 255);
-      const g = Math.floor(200 + t * 55);
-      return [r, g, 0];
-    } else if (intensity < 0.6) {
-      const t = (intensity - 0.3) / 0.3;
-      const r = 255;
-      const g = Math.floor(255 - t * 100);
-      return [r, g, 0];
-    } else {
-      const t = (intensity - 0.6) / 0.4;
-      const r = 255;
-      const g = Math.floor(155 * (1 - t));
-      return [r, g, 0];
-    }
-  };
-
-  // Find activity hotspots (grid cells with high density)
-  const getActivityHotspots = () => {
-    const hotspots = [];
-    for (let row = 0; row < GRID_SIZE; row++) {
-      for (let col = 0; col < GRID_SIZE; col++) {
-        const heat = heatmapGrid[row][col];
-        if (heat > maxHeat * 0.3) { // Only show significant activity
-          hotspots.push({
-            x: col * CELL_WIDTH + CELL_WIDTH / 2,
-            y: row * CELL_HEIGHT + CELL_HEIGHT / 2,
-            intensity: heat / maxHeat,
-            value: Math.round(heat)
-          });
-        }
-      }
-    }
-    // Sort by intensity and take top 8
-    return hotspots.sort((a, b) => b.intensity - a.intensity).slice(0, 8);
-  };
-
-  // Effect to render heatmap on canvas
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, VENUE_WIDTH, VENUE_HEIGHT);
-
-    // Draw gradient heatmap with interpolation
-    const imageData = ctx.createImageData(VENUE_WIDTH, VENUE_HEIGHT);
-    const data = imageData.data;
-
-    for (let y = 0; y < VENUE_HEIGHT; y++) {
-      for (let x = 0; x < VENUE_WIDTH; x++) {
-        // Calculate which grid cell this pixel belongs to
-        const gridX = Math.floor(x / CELL_WIDTH);
-        const gridY = Math.floor(y / CELL_HEIGHT);
-        
-        // Bilinear interpolation for smooth gradient
-        const fx = (x / CELL_WIDTH) - gridX;
-        const fy = (y / CELL_HEIGHT) - gridY;
-
-        // Get surrounding grid values
-        const g00 = gridY < GRID_SIZE && gridX < GRID_SIZE ? heatmapGrid[gridY][gridX] : 0;
-        const g10 = gridY < GRID_SIZE && gridX + 1 < GRID_SIZE ? heatmapGrid[gridY][gridX + 1] : 0;
-        const g01 = gridY + 1 < GRID_SIZE && gridX < GRID_SIZE ? heatmapGrid[gridY + 1][gridX] : 0;
-        const g11 = gridY + 1 < GRID_SIZE && gridX + 1 < GRID_SIZE ? heatmapGrid[gridY + 1][gridX + 1] : 0;
-
-        // Interpolate
-        const top = g00 * (1 - fx) + g10 * fx;
-        const bottom = g01 * (1 - fx) + g11 * fx;
-        const heat = top * (1 - fy) + bottom * fy;
-        
-        const intensity = Math.min(heat / maxHeat, 1);
-        const [r, g, b] = getHeatmapColorRGB(intensity);
-
-        const idx = (y * VENUE_WIDTH + x) * 4;
-        data[idx] = r;
-        data[idx + 1] = g;
-        data[idx + 2] = b;
-        data[idx + 3] = 200; // Alpha
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-
-    // Apply blur for smooth effect
-    ctx.filter = 'blur(8px)';
-    ctx.drawImage(canvas, 0, 0);
-    ctx.filter = 'none';
-
-  }, [heatmapGrid, maxHeat, VENUE_WIDTH, VENUE_HEIGHT, GRID_SIZE, CELL_WIDTH, CELL_HEIGHT]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -515,136 +433,139 @@ function DashboardPage() {
                 </div>
               </div>
 
-              {/* Venue Visualization with Canvas Heatmap */}
+              {/* Venue Visualization with SVG Heatmap */}
               <div className="bg-black/50 rounded-lg p-2 sm:p-4 border border-border/50">
                 <div
                   className="relative mx-auto"
                   style={{ maxWidth: "100%", aspectRatio: "16/9" }}
                 >
-                  {/* Container with proper aspect ratio */}
-                  <div className="relative w-full h-full">
-                    {/* Canvas for heatmap background */}
-                    <canvas
-                      ref={canvasRef}
-                      width={VENUE_WIDTH}
-                      height={VENUE_HEIGHT}
-                      className="absolute inset-0 w-full h-full rounded-lg"
-                      style={{ 
-                        border: "2px solid rgba(79, 140, 255, 0.3)",
-                        imageRendering: 'auto'
-                      }}
-                    />
+                  <svg
+                    viewBox={`0 0 ${VENUE_WIDTH} ${VENUE_HEIGHT}`}
+                    className="w-full h-full bg-gradient-to-br from-gray-900 to-black rounded-lg"
+                    style={{ border: "2px solid rgba(79, 140, 255, 0.3)" }}
+                  >
+                    <defs>
+                      <filter id="heatBlur">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="10" />
+                      </filter>
+                      {frameDetections.map((det, idx) => {
+                        const isCollision = collidingDetections.has(idx);
+                        const inner = isCollision ? "rgba(255,80,40,0.75)" : "rgba(255,215,0,0.6)";
+                        const outer = isCollision ? "rgba(255,80,40,0)" : "rgba(255,215,0,0)";
+                        return (
+                          <radialGradient key={`glow-grad-${idx}`} id={`glow-grad-${idx}`} cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stopColor={inner} />
+                            <stop offset="100%" stopColor={outer} />
+                          </radialGradient>
+                        );
+                      })}
+                    </defs>
 
-                    {/* SVG overlay for grid lines, detections, and activity markers */}
-                    <svg
-                      viewBox={`0 0 ${VENUE_WIDTH} ${VENUE_HEIGHT}`}
-                      className="absolute inset-0 w-full h-full"
-                      style={{ pointerEvents: 'none' }}
-                    >
-                      {/* Grid Lines (semi-transparent white) */}
-                      <g opacity="0.3">
-                        {/* Vertical lines */}
-                        {Array.from({ length: GRID_SIZE + 1 }).map((_, i) => (
-                          <line
-                            key={`vline-${i}`}
-                            x1={i * CELL_WIDTH}
-                            y1={0}
-                            x2={i * CELL_WIDTH}
-                            y2={VENUE_HEIGHT}
-                            stroke="rgba(255, 255, 255, 0.4)"
-                            strokeWidth="1"
+                    {/* 50x50 Grid Heatmap with blur */}
+                    <g filter="url(#heatBlur)">
+                      {Array.from({ length: GRID_SIZE }).map((_, row) =>
+                        Array.from({ length: GRID_SIZE }).map((_, col) => {
+                          const color = getHeatmapColor(row, col);
+                          return (
+                            <rect
+                              key={`grid-${row}-${col}`}
+                              x={col * CELL_WIDTH}
+                              y={row * CELL_HEIGHT}
+                              width={CELL_WIDTH}
+                              height={CELL_HEIGHT}
+                              fill={color}
+                              opacity="0.9"
+                            />
+                          );
+                        })
+                      )}
+                    </g>
+
+                    {/* Detection-centered glows to keep points visible and scaled */}
+                    <g filter="url(#heatBlur)">
+                      {frameDetections.map((det, idx) => {
+                        const cx = det.x + det.w / 2;
+                        const cy = det.y + det.h / 2;
+                        const base = Math.max(det.w, det.h);
+                        const minRadius = Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.04;
+                        const maxRadius = Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.18;
+                        const radius = Math.max(minRadius, Math.min(maxRadius, base * 1.6));
+                        return (
+                          <circle
+                            key={`glow-circle-${idx}`}
+                            cx={cx}
+                            cy={cy}
+                            r={radius}
+                            fill={`url(#glow-grad-${idx})`}
+                            opacity="0.9"
                           />
-                        ))}
-                        {/* Horizontal lines */}
-                        {Array.from({ length: GRID_SIZE + 1 }).map((_, i) => (
-                          <line
-                            key={`hline-${i}`}
-                            x1={0}
-                            y1={i * CELL_HEIGHT}
-                            x2={VENUE_WIDTH}
-                            y2={i * CELL_HEIGHT}
-                            stroke="rgba(255, 255, 255, 0.4)"
-                            strokeWidth="1"
-                          />
-                        ))}
+                        );
+                      })}
+                    </g>
+
+                    {/* Grid Lines */}
+                    <g>
+                      {Array.from({ length: GRID_SIZE + 1 }).map((_, i) => (
+                        <line
+                          key={`vline-${i}`}
+                          x1={i * CELL_WIDTH}
+                          y1={0}
+                          x2={i * CELL_WIDTH}
+                          y2={VENUE_HEIGHT}
+                          stroke="rgba(100, 140, 200, 0.25)"
+                          strokeWidth="0.5"
+                        />
+                      ))}
+                      {Array.from({ length: GRID_SIZE + 1 }).map((_, i) => (
+                        <line
+                          key={`hline-${i}`}
+                          x1={0}
+                          y1={i * CELL_HEIGHT}
+                          x2={VENUE_WIDTH}
+                          y2={i * CELL_HEIGHT}
+                          stroke="rgba(100, 140, 200, 0.25)"
+                          strokeWidth="0.5"
+                        />
+                      ))}
+                    </g>
+
+                    {/* Detection Bounding Boxes */}
+                    {frameDetections.map((det, idx) => (
+                      <g key={`detection-${idx}`}>
+                        <rect
+                          x={det.x}
+                          y={det.y}
+                          width={det.w}
+                          height={det.h}
+                          fill="none"
+                          stroke="#ffffff"
+                          strokeWidth="2"
+                          opacity="0.85"
+                        />
+                        <circle
+                          cx={det.x + det.w / 2}
+                          cy={det.y + det.h / 2}
+                          r="3"
+                          fill="#ffffff"
+                          stroke="#000000"
+                          strokeWidth="1"
+                          opacity="1"
+                        />
+                        <text
+                          x={det.x + 5}
+                          y={det.y + 18}
+                          fill="#ffffff"
+                          fontSize="11"
+                          fontWeight="bold"
+                          stroke="#000000"
+                          strokeWidth="0.5"
+                          style={{ textShadow: "0 0 4px black" }}
+                        >
+                          {idx + 1}
+                        </text>
                       </g>
-
-                      {/* Activity Hotspot Markers */}
-                      {getActivityHotspots().map((hotspot, idx) => (
-                        <g key={`hotspot-${idx}`}>
-                          {/* Outer glow circle */}
-                          <circle
-                            cx={hotspot.x}
-                            cy={hotspot.y}
-                            r={20}
-                            fill="rgba(255, 255, 255, 0.1)"
-                            stroke="rgba(255, 255, 255, 0.3)"
-                            strokeWidth="1"
-                          />
-                          {/* Inner circle */}
-                          <circle
-                            cx={hotspot.x}
-                            cy={hotspot.y}
-                            r={12}
-                            fill="rgba(255, 255, 255, 0.9)"
-                            stroke="rgba(0, 0, 0, 0.5)"
-                            strokeWidth="2"
-                          />
-                          {/* Activity label */}
-                          <text
-                            x={hotspot.x}
-                            y={hotspot.y + 5}
-                            textAnchor="middle"
-                            fill="#000000"
-                            fontSize="12"
-                            fontWeight="bold"
-                          >
-                            Activity {idx + 1}
-                          </text>
-                        </g>
-                      ))}
-
-                      {/* Detection Bounding Boxes */}
-                      {frameDetections.map((det, idx) => (
-                        <g key={`detection-${idx}`}>
-                          {/* Bounding Box */}
-                          <rect
-                            x={det.x}
-                            y={det.y}
-                            width={det.w}
-                            height={det.h}
-                            fill="none"
-                            stroke="#ffffff"
-                            strokeWidth="2"
-                            opacity="0.85"
-                          />
-                          {/* Center Point Marker */}
-                          <circle
-                            cx={det.x + det.w / 2}
-                            cy={det.y + det.h / 2}
-                            r="3"
-                            fill="#ffffff"
-                            stroke="#000000"
-                            strokeWidth="1"
-                            opacity="1"
-                          />
-                          {/* Label */}
-                          <text
-                            x={det.x + 5}
-                            y={det.y + 18}
-                            fill="#ffffff"
-                            fontSize="11"
-                            fontWeight="bold"
-                            stroke="#000000"
-                            strokeWidth="0.5"
-                            style={{ textShadow: "0 0 4px black" }}
-                          >
-                            {idx + 1}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
-                  </div>
+                    ))}
+                  </svg>
 
                   {/* Overlay Info */}
                   <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-black/70 backdrop-blur-sm px-2 sm:px-3 py-1 sm:py-2 rounded-md sm:rounded-lg border border-primary/30 text-[10px] sm:text-xs">
