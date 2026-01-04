@@ -71,9 +71,9 @@ function UserMenu() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-surface border border-primary/30 rounded-lg shadow-xl z-50 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-64 bg-background/95 backdrop-blur-xl border border-border rounded-lg shadow-2xl z-50 overflow-hidden">
           {/* User Info Section */}
-          <div className="p-4 border-b border-primary/20">
+          <div className="p-4 border-b border-border bg-background/80">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center text-background font-bold text-lg">
                 {getUserInitials(user?.username || user?.email)}
@@ -96,13 +96,13 @@ function UserMenu() {
           </div>
 
           {/* Menu Items */}
-          <div className="py-2">
+          <div className="py-2 bg-background/90">
             <button
               onClick={() => {
                 setIsOpen(false);
                 navigate("/dashboard");
               }}
-              className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-primary/10 transition-colors"
+              className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-primary/20 transition-colors text-text"
             >
               <UserCircle size={18} className="text-accent" />
               <span className="text-sm">Dashboard</span>
@@ -114,18 +114,18 @@ function UserMenu() {
                   setIsOpen(false);
                   navigate("/admin");
                 }}
-                className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-primary/10 transition-colors"
+                className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-primary/20 transition-colors text-text"
               >
                 <Shield size={18} className="text-accent" />
                 <span className="text-sm">Admin Panel</span>
               </button>
             )}
 
-            <div className="my-2 border-t border-primary/20"></div>
+            <div className="my-2 border-t border-border"></div>
 
             <button
               onClick={handleLogout}
-              className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-red-500/10 text-red-500 transition-colors"
+              className="w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-red-500/20 text-red-500 transition-colors"
             >
               <LogOut size={18} />
               <span className="text-sm">Logout</span>
