@@ -1,7 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
+const explicitApiUrl =
+  process.env.EXPO_PUBLIC_API_URL ||
+  Constants.expoConfig?.extra?.apiUrl ||
+  Constants.expoConfig?.extra?.API_URL ||
+  null;
+
+const inferLanUrl = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.hostUri ||
+    (Constants as any).manifest?.hostUri ||
+    "";
+
+  if (!hostUri) return null;
+  const host = hostUri.split(":");
+  const hostname = Array.isArray(host) ? host[0] : null;
+  return hostname ? `http://${hostname}:5000` : null;
+};
+
 const getBaseUrl = () => {
+  if (explicitApiUrl) return explicitApiUrl;
+
+  const inferred = inferLanUrl();
+  if (inferred) return inferred;
+
   if (Platform.OS === "android") {
     return "http://10.0.2.2:5000";
   }

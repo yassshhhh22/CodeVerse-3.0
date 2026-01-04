@@ -1,7 +1,33 @@
 import { io, Socket } from "socket.io-client";
+import Constants from "expo-constants";
 import { Platform } from "react-native";
 
+const explicitSocketUrl =
+  process.env.EXPO_PUBLIC_SOCKET_URL ||
+  process.env.EXPO_PUBLIC_API_URL ||
+  Constants.expoConfig?.extra?.socketUrl ||
+  Constants.expoConfig?.extra?.apiUrl ||
+  null;
+
+const inferLanSocketUrl = () => {
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    (Constants as any).manifest2?.hostUri ||
+    (Constants as any).manifest?.hostUri ||
+    "";
+
+  if (!hostUri) return null;
+  const host = hostUri.split(":");
+  const hostname = Array.isArray(host) ? host[0] : null;
+  return hostname ? `http://${hostname}:5000` : null;
+};
+
 const getSocketUrl = () => {
+  if (explicitSocketUrl) return explicitSocketUrl;
+
+  const inferred = inferLanSocketUrl();
+  if (inferred) return inferred;
+
   if (Platform.OS === "android") {
     return "http://10.0.2.2:5000";
   }

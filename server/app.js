@@ -40,21 +40,28 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
-// CORS configuration - allow both web client and mobile app
+// CORS configuration - allow both web client and mobile app (LAN + Expo)
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:5173",
   "http://localhost:8081", // Expo dev server
   "http://localhost:8082", // Expo dev server alternate port
   "exp://localhost:8081", // Expo development URL
   "exp://localhost:8082", // Expo development URL alternate port
+  ...(process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
+    : []),
 ];
+
+// Permit private LAN origins (e.g., http://192.168.x.x:19000) for real devices on Wi‑Fi
+const privateLanPattern =
+  /^https?:\/\/(10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+)(:\d+)?$/;
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin) || privateLanPattern.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
