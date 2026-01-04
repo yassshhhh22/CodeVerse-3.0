@@ -40,8 +40,26 @@ const limiter = rateLimit({
 });
 app.use("/api/", limiter);
 
+// CORS configuration - allow both web client and mobile app
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:5173",
+  "http://localhost:8081", // Expo dev server
+  "http://localhost:8082", // Expo dev server alternate port
+  "exp://localhost:8081", // Expo development URL
+  "exp://localhost:8082", // Expo development URL alternate port
+];
+
 const corsOptions = {
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200,
 };
