@@ -20,10 +20,15 @@ from websocket_streamer import WebSocketStreamer
 class CrowdMonitoringApp:
     """Main application class"""
     
-    def __init__(self, video_source=None):
+    def __init__(self, video_source=None, camera_id=None):
         print("\n" + "="*60)
         print("CROWD MONITORING - COMPUTER VISION MODULE")
         print("="*60)
+        
+        # Override camera ID if provided
+        if camera_id is not None:
+            CAMERA_CONFIG["camera_id"] = camera_id
+            print(f"Camera ID: {camera_id}")
         
         # Override video source if provided
         if video_source is not None:
@@ -229,11 +234,11 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py                           # Use webcam (default)
-  python main.py --video video.mp4         # Use video file
-  python main.py --video path/to/file.mp4  # Use video file with path
-  python main.py --camera 1                # Use camera index 1
-  python main.py --rtsp rtsp://ip:port/... # Use IP camera
+  python main.py                                    # Use webcam (default)
+  python main.py --camera 0 --id CAM_01            # Laptop camera with custom ID
+  python main.py --camera 1 --id CAM_USB           # USB camera with custom ID
+  python main.py --video video.mp4                 # Use video file
+  python main.py --rtsp "http://192.168.1.100:8080/video" --id PHONE_01  # Phone camera
         """
     )
     
@@ -251,7 +256,13 @@ Examples:
     source_group.add_argument(
         '--rtsp', '-r',
         type=str,
-        help='RTSP stream URL for IP camera'
+        help='RTSP/HTTP stream URL for IP camera (e.g., http://192.168.1.100:8080/video)'
+    )
+    
+    parser.add_argument(
+        '--id',
+        type=str,
+        help='Unique camera ID (e.g., CAM_01, PHONE_01). Overrides config.py setting.'
     )
     
     return parser.parse_args()
@@ -271,11 +282,14 @@ if __name__ == "__main__":
         print(f"\n📷 Using camera index: {video_source}")
     elif args.rtsp:
         video_source = args.rtsp
-        print(f"\n📡 Using RTSP stream: {video_source}")
+        print(f"\n📡 Using HTTP/RTSP stream: {video_source}")
     else:
         print(f"\n📷 Using default camera (config.py setting)")
     
+    # Get camera ID
+    camera_id = args.id if args.id else None
+    
     # Run application
-    app = CrowdMonitoringApp(video_source=video_source)
+    app = CrowdMonitoringApp(video_source=video_source, camera_id=camera_id)
     app.run()
 
