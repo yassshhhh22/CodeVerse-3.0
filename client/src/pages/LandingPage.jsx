@@ -119,12 +119,14 @@ function LandingPage() {
               >
                 Log In
               </Link>
+              {/* 
               <Link
                 to="/dashboard"
                 className="px-5 py-2.5 bg-primary text-background rounded-lg hover:shadow-[0_0_20px_rgba(79,140,255,0.5)] transition-all duration-300 font-semibold text-sm lg:text-base whitespace-nowrap"
               >
                 View Live Dashboard
-              </Link>
+              </Link> 
+              */}
             </div>
             <Link
               to="/login"
@@ -156,13 +158,15 @@ function LandingPage() {
                 Real-time crowd density monitoring using computer vision.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
+                {/* 
                 <Link
                   to="/dashboard"
                   className="px-8 py-4 bg-primary text-background rounded-lg font-bold text-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   View Live Dashboard
                   <ArrowRight size={20} />
-                </Link>
+                </Link> 
+                */}
                 <a
                   href="#architecture"
                   className="px-8 py-4 border-2 border-border text-text rounded-lg font-bold text-lg hover:border-primary hover:shadow-[0_0_20px_rgba(79,140,255,0.3)] transition-all duration-300 flex items-center justify-center"

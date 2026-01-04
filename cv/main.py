@@ -48,8 +48,8 @@ class CrowdMonitoringApp:
         self.frame_skip = CAMERA_CONFIG["frame_skip"]
         self.frame_count = 0
         
-        # Metadata sending interval (5 seconds)
-        self.send_interval = 5.0
+        # Metadata sending interval (2 seconds)
+        self.send_interval = 2.0
         self.last_send_time = 0
         self.latest_metadata = None
         

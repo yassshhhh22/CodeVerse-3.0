@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 export const getAlerts = asyncHandler(async (req, res, next) => {
   const { venue_id, zone_id, severity, acknowledged } = req.query;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 20;
+  const limit = parseInt(req.query.limit) || 50;
   const skip = (page - 1) * limit;
 
   const filter = {};
