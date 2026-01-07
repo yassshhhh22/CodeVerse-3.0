@@ -17,6 +17,20 @@ Transform public space management with AI-powered crowd density monitoring, inte
 
 ---
 
+## Development Team
+
+<div align="center">
+
+| Yash Pandey | Anuj Pal | Pratik Pandey | Shivangi Pradhan |
+|:---:|:---:|:---:|:---:|
+| <img src="https://github.com/yassshhhh22.png" width="120" height="120" style="border-radius: 50%;"> | <img src="https://github.com/anuj-1402.png" width="120" height="120" style="border-radius: 50%;"> | <img src="https://github.com/Pritpan.png" width="120" height="120" style="border-radius: 50%;"> | <img src="https://github.com/s-hivangi.png" width="120" height="120" style="border-radius: 50%;"> |
+| **Full Stack Developer** | **Full Stack Developer** | **Full Stack Developer** | **Full Stack Developer** |
+| [@yassshhhh22](https://github.com/yassshhhh22) | [@anuj-1402](https://github.com/anuj-1402) | [@Pritpan](https://github.com/Pritpan) | [@s-hivangi](https://github.com/s-hivangi) |
+
+</div>
+
+---
+
 ## Table of Contents
 
 - [Overview](#overview)
