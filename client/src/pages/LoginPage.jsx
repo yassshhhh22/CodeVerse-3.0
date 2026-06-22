@@ -134,7 +134,10 @@ function LoginPage() {
       </Link>
 
       {/* Login Form */}
-      <div className="relative z-10 w-full max-w-md px-6 max-h-screen overflow-y-auto py-4">
+      <div
+        className="relative z-10 w-full max-w-md px-6 max-h-screen overflow-y-auto py-4"
+        title="System is down due to low resources. Ask admin if needed."
+      >
         <div className="bg-background/80 backdrop-blur-xl border-2 border-border rounded-2xl p-6 shadow-[0_0_50px_rgba(79,140,255,0.1)] hover:shadow-[0_0_80px_rgba(79,140,255,0.2)] transition-all duration-300">
           {/* Header */}
           <div className="text-center mb-5">

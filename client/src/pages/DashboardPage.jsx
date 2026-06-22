@@ -42,7 +42,8 @@ function DashboardPage() {
   const { zones, fetchZonesByVenue } = useZoneStore();
 
   // Get selected venue camera_id for WebSocket subscription
-  const selectedVenue = venues?.find(v => v._id === selectedCamera) || venues?.[0] || null;
+  const selectedVenue =
+    venues?.find((v) => v._id === selectedCamera) || venues?.[0] || null;
   const selectedCameraId = selectedVenue?.camera_id || null;
 
   // WebSocket hook for real-time updates
@@ -62,20 +63,20 @@ function DashboardPage() {
       // Show toast notification
       setToastAlert(alert);
       setShowToast(true);
-      
+
       // Play alert sound
       try {
         const audioData = `data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZizcIGWi77fajUBAWXbfq66xHFQxNo+H0`;
         const audio = new Audio(audioData);
         audio.volume = 0.3;
-        audio.play().catch(e => console.log("Audio play failed:", e));
+        audio.play().catch((e) => console.log("Audio play failed:", e));
       } catch (e) {
         console.log("Audio not supported");
       }
-      
+
       // Add to realtime alerts list
-      setRealtimeAlerts(prev => [alert, ...prev].slice(0, 10));
-      
+      setRealtimeAlerts((prev) => [alert, ...prev].slice(0, 10));
+
       // Also fetch updated alerts from API
       fetchAlerts({ limit: 10 });
     },
@@ -165,17 +166,25 @@ function DashboardPage() {
 
   const summaryData = {
     totalPeople: frameDetections.length,
-    activeCameras: venues?.filter(v => v.status === 'active').length || 0,
+    activeCameras: venues?.filter((v) => v.status === "active").length || 0,
     totalCameras: venues?.length || 0,
-    warningZones: Array.isArray(alerts) ? alerts.filter(a => a.severity === 'warning' && !a.acknowledged_by).length : 0,
-    criticalZones: Array.isArray(alerts) ? alerts.filter(a => a.severity === 'critical' && !a.acknowledged_by).length : 0,
+    warningZones: Array.isArray(alerts)
+      ? alerts.filter((a) => a.severity === "warning" && !a.acknowledged_by)
+          .length
+      : 0,
+    criticalZones: Array.isArray(alerts)
+      ? alerts.filter((a) => a.severity === "critical" && !a.acknowledged_by)
+          .length
+      : 0,
   };
 
   // Use real grid density data from WebSocket or fallback to empty grid
   const getHeatmapGrid = () => {
     if (!wsGridDensity?.matrix?.length) {
       // Return empty grid if no data
-      return Array(GRID_SIZE).fill(0).map(() => Array(GRID_SIZE).fill(0));
+      return Array(GRID_SIZE)
+        .fill(0)
+        .map(() => Array(GRID_SIZE).fill(0));
     }
 
     // Backend returns matrix as 2D array [rows][cols]
@@ -192,8 +201,14 @@ function DashboardPage() {
       const a = frameDetections[i];
       for (let j = i + 1; j < frameDetections.length; j++) {
         const b = frameDetections[j];
-        const overlapX = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
-        const overlapY = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+        const overlapX = Math.max(
+          0,
+          Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x),
+        );
+        const overlapY = Math.max(
+          0,
+          Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y),
+        );
         if (overlapX > 0 && overlapY > 0) {
           colliding.add(i);
           colliding.add(j);
@@ -265,15 +280,15 @@ function DashboardPage() {
     <div className="min-h-screen w-full bg-black text-text relative font-serif">
       {/* Alert Toast Notification */}
       {showToast && toastAlert && (
-        <AlertToast 
-          alert={toastAlert} 
+        <AlertToast
+          alert={toastAlert}
           onClose={() => {
             setShowToast(false);
             setToastAlert(null);
           }}
         />
       )}
-      
+
       {/* Background graphics */}
       <div className="fixed inset-0 z-0 opacity-30">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-radial from-primary/30 via-primary/15 to-transparent rounded-full blur-3xl"></div>
@@ -303,24 +318,28 @@ function DashboardPage() {
               <div className="hidden md:block h-8 w-px bg-border"></div>
               <div className="hidden md:flex items-center gap-2">
                 <span className="text-secondary text-sm">Venue:</span>
-                <span className="text-text font-semibold text-sm">
-                  CodeVerse 3.0 Main Hall
+                <span
+                  className="text-text font-semibold text-sm"
+                  title="System is down due to low resources. Ask admin if needed."
+                >
+                  Main Hall
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
               {/* WebSocket Connection Status */}
-              <ConnectionStatus 
+              <ConnectionStatus
                 wsConnected={wsConnected}
                 wsReconnecting={wsReconnecting}
                 venueConnected={!!selectedCameraId && wsConnected}
                 lastDataReceived={lastDataReceived}
               />
-              
+
               <div className="hidden sm:flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-background border border-border rounded-lg">
                 <span className="text-xs sm:text-sm">
-                  {getStatusIcon(systemStatus)} {summaryData.activeCameras}/{summaryData.totalCameras} Cameras
+                  {getStatusIcon(systemStatus)} {summaryData.activeCameras}/
+                  {summaryData.totalCameras} Cameras
                 </span>
               </div>
               <UserMenu />
@@ -392,7 +411,11 @@ function DashboardPage() {
                     Live Crowd Heatmap
                   </h2>
                 </div>
-                {selectedVenue && selectedVenue.status === 'active' && wsConnected && lastDataReceived && (Date.now() - new Date(lastDataReceived).getTime() < 30000) ? (
+                {selectedVenue &&
+                selectedVenue.status === "active" &&
+                wsConnected &&
+                lastDataReceived &&
+                Date.now() - new Date(lastDataReceived).getTime() < 30000 ? (
                   <div className="flex items-center gap-2 text-xs text-green-500">
                     <Activity
                       size={12}
@@ -402,10 +425,7 @@ function DashboardPage() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 text-xs text-red-500">
-                    <Activity
-                      size={12}
-                      className="sm:w-3.5 sm:h-3.5"
-                    />
+                    <Activity size={12} className="sm:w-3.5 sm:h-3.5" />
                     <span>Offline</span>
                   </div>
                 )}
@@ -423,13 +443,16 @@ function DashboardPage() {
                 >
                   {venues?.map((venue) => (
                     <option key={venue._id} value={venue._id}>
-                      {venue.name} ({venue.status || 'active'})
+                      {venue.name} ({venue.status || "active"})
                     </option>
                   ))}
                 </select>
                 <div className="text-[10px] sm:text-xs text-secondary sm:ml-auto flex items-center gap-1">
                   <Clock size={10} className="sm:w-3 sm:h-3 inline" />
-                  Last updated: {wsGridDensity?.timestamp ? new Date(wsGridDensity.timestamp).toLocaleTimeString() : 'Just now'}
+                  Last updated:{" "}
+                  {wsGridDensity?.timestamp
+                    ? new Date(wsGridDensity.timestamp).toLocaleTimeString()
+                    : "Just now"}
                 </div>
               </div>
 
@@ -450,10 +473,20 @@ function DashboardPage() {
                       </filter>
                       {frameDetections.map((det, idx) => {
                         const isCollision = collidingDetections.has(idx);
-                        const inner = isCollision ? "rgba(255,80,40,0.75)" : "rgba(255,215,0,0.6)";
-                        const outer = isCollision ? "rgba(255,80,40,0)" : "rgba(255,215,0,0)";
+                        const inner = isCollision
+                          ? "rgba(255,80,40,0.75)"
+                          : "rgba(255,215,0,0.6)";
+                        const outer = isCollision
+                          ? "rgba(255,80,40,0)"
+                          : "rgba(255,215,0,0)";
                         return (
-                          <radialGradient key={`glow-grad-${idx}`} id={`glow-grad-${idx}`} cx="50%" cy="50%" r="50%">
+                          <radialGradient
+                            key={`glow-grad-${idx}`}
+                            id={`glow-grad-${idx}`}
+                            cx="50%"
+                            cy="50%"
+                            r="50%"
+                          >
                             <stop offset="0%" stopColor={inner} />
                             <stop offset="100%" stopColor={outer} />
                           </radialGradient>
@@ -477,7 +510,7 @@ function DashboardPage() {
                               opacity="0.9"
                             />
                           );
-                        })
+                        }),
                       )}
                     </g>
 
@@ -487,9 +520,14 @@ function DashboardPage() {
                         const cx = det.x + det.w / 2;
                         const cy = det.y + det.h / 2;
                         const base = Math.max(det.w, det.h);
-                        const minRadius = Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.04;
-                        const maxRadius = Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.18;
-                        const radius = Math.max(minRadius, Math.min(maxRadius, base * 1.6));
+                        const minRadius =
+                          Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.04;
+                        const maxRadius =
+                          Math.min(VENUE_WIDTH, VENUE_HEIGHT) * 0.18;
+                        const radius = Math.max(
+                          minRadius,
+                          Math.min(maxRadius, base * 1.6),
+                        );
                         return (
                           <circle
                             key={`glow-circle-${idx}`}
@@ -629,77 +667,102 @@ function DashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {zones && zones.length > 0 ? zones.map((zone) => {
-                      const zoneDensity = wsZoneDensities?.find(zd => zd.zone_id === zone._id);
-                      const densityValue = zoneDensity?.count || 0;
-                      const densityPercentage = Math.min(Math.round(densityValue), 100);
-                      const venue = venues?.find(v => v._id === zone.venue_id);
-                      const isLive = venue?.status === 'active' && wsConnected && lastDataReceived && (Date.now() - new Date(lastDataReceived).getTime() < 30000);
-                      const status = isLive ? 'online' : 'offline';
-                      
-                      return (
-                      <tr
-                        key={zone._id}
-                        className="border-b border-border/50 hover:bg-primary/5 transition-colors"
-                      >
-                        <td className="py-2 sm:py-3 px-2 font-mono text-[10px] sm:text-xs">
-                          {venue?.camera_id || 'N/A'}
-                        </td>
-                        <td className="py-2 sm:py-3 px-2 text-xs sm:text-sm">
-                          {zone.name}
-                        </td>
-                        <td className="py-2 sm:py-3 px-2">
-                          <span
-                            className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${getStatusColor(status)}`}
+                    {zones && zones.length > 0 ? (
+                      zones.map((zone) => {
+                        const zoneDensity = wsZoneDensities?.find(
+                          (zd) => zd.zone_id === zone._id,
+                        );
+                        const densityValue = zoneDensity?.count || 0;
+                        const densityPercentage = Math.min(
+                          Math.round(densityValue),
+                          100,
+                        );
+                        const venue = venues?.find(
+                          (v) => v._id === zone.venue_id,
+                        );
+                        const isLive =
+                          venue?.status === "active" &&
+                          wsConnected &&
+                          lastDataReceived &&
+                          Date.now() - new Date(lastDataReceived).getTime() <
+                            30000;
+                        const status = isLive ? "online" : "offline";
+
+                        return (
+                          <tr
+                            key={zone._id}
+                            className="border-b border-border/50 hover:bg-primary/5 transition-colors"
                           >
-                            {status === "online" && (
-                              <CheckCircle
-                                size={12}
-                                className="sm:w-3.5 sm:h-3.5"
-                              />
-                            )}
-                            {status === "offline" && (
-                              <XCircle
-                                size={12}
-                                className="sm:w-3.5 sm:h-3.5"
-                              />
-                            )}
-                            <span className="hidden sm:inline">
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </span>
-                          </span>
-                        </td>
-                        <td className="py-2 sm:py-3 px-2">
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            <div className="w-12 sm:w-16 bg-border rounded-full h-1.5 sm:h-2 overflow-hidden">
-                              <div
-                                className={`h-full ${
-                                  densityPercentage >= 90
-                                    ? "bg-red-500"
-                                    : densityPercentage >= 75
-                                    ? "bg-accent"
-                                    : "bg-green-500"
-                                }`}
-                                style={{ width: `${densityPercentage}%` }}
-                              ></div>
-                            </div>
-                            <span className="text-[10px] sm:text-xs">
-                              {densityPercentage}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-2 sm:py-3 px-2 text-[10px] sm:text-xs text-secondary">
-                          {isLive && lastDataReceived ? (() => {
-                            const seconds = Math.floor((Date.now() - new Date(lastDataReceived).getTime()) / 1000);
-                            if (seconds < 5) return 'Just now';
-                            if (seconds < 60) return `${seconds}s ago`;
-                            return `${Math.floor(seconds / 60)}m ago`;
-                          })() : 'No data'}
-                        </td>
-                      </tr>
-                    )}) : (
+                            <td className="py-2 sm:py-3 px-2 font-mono text-[10px] sm:text-xs">
+                              {venue?.camera_id || "N/A"}
+                            </td>
+                            <td className="py-2 sm:py-3 px-2 text-xs sm:text-sm">
+                              {zone.name}
+                            </td>
+                            <td className="py-2 sm:py-3 px-2">
+                              <span
+                                className={`flex items-center gap-1 sm:gap-2 text-xs sm:text-sm ${getStatusColor(status)}`}
+                              >
+                                {status === "online" && (
+                                  <CheckCircle
+                                    size={12}
+                                    className="sm:w-3.5 sm:h-3.5"
+                                  />
+                                )}
+                                {status === "offline" && (
+                                  <XCircle
+                                    size={12}
+                                    className="sm:w-3.5 sm:h-3.5"
+                                  />
+                                )}
+                                <span className="hidden sm:inline">
+                                  {status.charAt(0).toUpperCase() +
+                                    status.slice(1)}
+                                </span>
+                              </span>
+                            </td>
+                            <td className="py-2 sm:py-3 px-2">
+                              <div className="flex items-center gap-1 sm:gap-2">
+                                <div className="w-12 sm:w-16 bg-border rounded-full h-1.5 sm:h-2 overflow-hidden">
+                                  <div
+                                    className={`h-full ${
+                                      densityPercentage >= 90
+                                        ? "bg-red-500"
+                                        : densityPercentage >= 75
+                                          ? "bg-accent"
+                                          : "bg-green-500"
+                                    }`}
+                                    style={{ width: `${densityPercentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-[10px] sm:text-xs">
+                                  {densityPercentage}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-2 sm:py-3 px-2 text-[10px] sm:text-xs text-secondary">
+                              {isLive && lastDataReceived
+                                ? (() => {
+                                    const seconds = Math.floor(
+                                      (Date.now() -
+                                        new Date(lastDataReceived).getTime()) /
+                                        1000,
+                                    );
+                                    if (seconds < 5) return "Just now";
+                                    if (seconds < 60) return `${seconds}s ago`;
+                                    return `${Math.floor(seconds / 60)}m ago`;
+                                  })()
+                                : "No data"}
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
                       <tr>
-                        <td colSpan="5" className="py-4 text-center text-secondary text-sm">
+                        <td
+                          colSpan="5"
+                          className="py-4 text-center text-secondary text-sm"
+                        >
                           No zones configured for this venue
                         </td>
                       </tr>
@@ -723,81 +786,99 @@ function DashboardPage() {
               <div className="space-y-3">
                 {alerts && alerts.length > 0 ? (
                   alerts.slice(0, 5).map((alert) => {
-                    const zoneName = alert.zone_id?.name || alert.venue_id?.name || 'Unknown Zone';
-                    const timeAgo = alert.triggered_at ? 
-                      new Date(alert.triggered_at).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      }) : 'N/A';
-                    const isAcknowledged = alert.acknowledged_by !== null && alert.acknowledged_by !== undefined;
-                    
+                    const zoneName =
+                      alert.zone_id?.name ||
+                      alert.venue_id?.name ||
+                      "Unknown Zone";
+                    const timeAgo = alert.triggered_at
+                      ? new Date(alert.triggered_at).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "N/A";
+                    const isAcknowledged =
+                      alert.acknowledged_by !== null &&
+                      alert.acknowledged_by !== undefined;
+
                     return (
-                    <div
-                      key={alert._id}
-                      className={`p-4 rounded-lg border ${
-                        isAcknowledged 
-                          ? "bg-gray-500/10 border-gray-500/30 opacity-60"
-                          : alert.severity === "critical"
-                          ? "bg-red-500/10 border-red-500/50"
-                          : "bg-accent/10 border-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          {isAcknowledged ? (
-                            <CheckCircle size={18} className="text-green-500" />
-                          ) : alert.severity === "critical" ? (
-                            <AlertCircle size={18} className="text-red-500" />
-                          ) : (
-                            <AlertTriangle size={18} className="text-accent" />
-                          )}
-                          <span className="font-semibold">{zoneName}</span>
-                          {isAcknowledged && (
-                            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full">
-                              Acknowledged
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs text-secondary">
-                          {timeAgo}
-                        </span>
-                      </div>
-                      <p className="text-sm text-secondary mb-2">
-                        {alert.message}
-                      </p>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 text-xs">
-                          <span className="text-secondary">Density:</span>
-                          <span className="text-primary font-semibold">
-                            {alert.density_value}%
+                      <div
+                        key={alert._id}
+                        className={`p-4 rounded-lg border ${
+                          isAcknowledged
+                            ? "bg-gray-500/10 border-gray-500/30 opacity-60"
+                            : alert.severity === "critical"
+                              ? "bg-red-500/10 border-red-500/50"
+                              : "bg-accent/10 border-accent/50"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            {isAcknowledged ? (
+                              <CheckCircle
+                                size={18}
+                                className="text-green-500"
+                              />
+                            ) : alert.severity === "critical" ? (
+                              <AlertCircle size={18} className="text-red-500" />
+                            ) : (
+                              <AlertTriangle
+                                size={18}
+                                className="text-accent"
+                              />
+                            )}
+                            <span className="font-semibold">{zoneName}</span>
+                            {isAcknowledged && (
+                              <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full">
+                                Acknowledged
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-secondary">
+                            {timeAgo}
                           </span>
                         </div>
-                        {!isAcknowledged && (
-                          <button
-                            onClick={async () => {
-                              const result = await acknowledgeAlert(alert._id);
-                              if (result.success) {
-                                // Alert is already updated in store by acknowledgeAlert
-                                console.log("Alert acknowledged successfully");
-                              }
-                            }}
-                            className="flex items-center gap-1 px-3 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg text-xs font-medium transition-colors"
-                          >
-                            <Check size={14} />
-                            Acknowledge
-                          </button>
-                        )}
+                        <p className="text-sm text-secondary mb-2">
+                          {alert.message}
+                        </p>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="text-secondary">Density:</span>
+                            <span className="text-primary font-semibold">
+                              {alert.density_value}%
+                            </span>
+                          </div>
+                          {!isAcknowledged && (
+                            <button
+                              onClick={async () => {
+                                const result = await acknowledgeAlert(
+                                  alert._id,
+                                );
+                                if (result.success) {
+                                  // Alert is already updated in store by acknowledgeAlert
+                                  console.log(
+                                    "Alert acknowledged successfully",
+                                  );
+                                }
+                              }}
+                              className="flex items-center gap-1 px-3 py-1 bg-primary/20 hover:bg-primary/30 text-primary rounded-lg text-xs font-medium transition-colors"
+                            >
+                              <Check size={14} />
+                              Acknowledge
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
                     );
                   })
                 ) : (
                   <div className="text-center py-8 text-secondary">
                     <Bell size={48} className="mx-auto mb-3 opacity-30" />
                     <p className="text-sm">No active alerts</p>
-                    <p className="text-xs mt-1">All zones are operating normally</p>
+                    <p className="text-xs mt-1">
+                      All zones are operating normally
+                    </p>
                   </div>
                 )}
               </div>

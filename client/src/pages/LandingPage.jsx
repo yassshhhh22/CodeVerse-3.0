@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import {
   Camera,
   Grid3x3,
@@ -9,7 +9,21 @@ import {
   ArrowRight,
 } from "lucide-react";
 
+const LOGO_SRC = "/crowdcrawl.png";
 function LandingPage() {
+  useEffect(() => {
+    document.title = "CrowdCrawl";
+
+    let favicon = document.querySelector('link[rel="icon"]');
+    if (!favicon) {
+      favicon = document.createElement("link");
+      favicon.rel = "icon";
+      document.head.appendChild(favicon);
+    }
+
+    favicon.type = "image/png";
+    favicon.href = LOGO_SRC;
+  }, []);
   return (
     <div className="min-h-screen w-full bg-black text-text relative font-serif overflow-hidden">
       {/* Big graphic background design with 70% transparency */}
@@ -100,114 +114,66 @@ function LandingPage() {
         style={{ animationDelay: "2.5s" }}
       ></div>
 
-      <nav className="fixed w-full top-0 z-50 bg-black/60 backdrop-blur-md">
+      <nav className="fixed w-full top-0 z-50 bg-black/60 backdrop-blur-md border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="text-xl sm:text-2xl font-bold text-primary">
-              CrowdCrawl
-            </div>
-            <div className="hidden md:flex items-center gap-6">
-              <a
-                href="#architecture"
-                className="text-text hover:text-primary transition-all duration-300 text-sm lg:text-base hover:drop-shadow-[0_0_8px_rgba(79,140,255,0.6)] whitespace-nowrap"
-              >
-                System Architecture
-              </a>
-              <Link
-                to="/login"
-                className="px-5 py-2.5 border-2 border-primary text-primary rounded-lg hover:bg-primary hover:text-background hover:shadow-[0_0_20px_rgba(79,140,255,0.5)] transition-all duration-300 font-semibold text-sm lg:text-base whitespace-nowrap"
-              >
-                Log In
-              </Link>
-              {/* 
-              <Link
-                to="/dashboard"
-                className="px-5 py-2.5 bg-primary text-background rounded-lg hover:shadow-[0_0_20px_rgba(79,140,255,0.5)] transition-all duration-300 font-semibold text-sm lg:text-base whitespace-nowrap"
-              >
-                View Live Dashboard
-              </Link> 
-              */}
-            </div>
-            <Link
-              to="/login"
-              className="md:hidden px-4 py-2 bg-primary text-background rounded-lg text-sm font-semibold hover:shadow-[0_0_15px_rgba(79,140,255,0.5)] transition-all duration-300"
+          <div className="relative flex items-center justify-center h-16">
+            <a
+              href="#top"
+              className="flex items-center justify-center gap-3 text-xl sm:text-2xl font-bold text-primary hover:-translate-y-0.5 hover:drop-shadow-[0_0_10px_rgba(79,140,255,0.6)] transition-all duration-300"
+              aria-label="CrowdCrawl home"
             >
-              Log In
-            </Link>
+              <img
+                src={LOGO_SRC}
+                alt="CrowdCrawl logo"
+                className="h-9 w-9 sm:h-10 sm:w-10 object-contain"
+              />
+              <span>CrowdCrawl</span>
+            </a>
+
+            <a
+              href="#architecture"
+              className="hidden sm:inline-flex absolute right-0 text-text hover:text-primary transition-all duration-300 text-sm lg:text-base hover:drop-shadow-[0_0_8px_rgba(79,140,255,0.6)] whitespace-nowrap"
+            >
+              System Architecture
+            </a>
           </div>
         </div>
       </nav>
 
-      <section className="pt-24 pb-12 sm:pt-32 sm:pb-16 px-4 relative z-10">
+      <section id="top" className="pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 relative z-10">
         {/* Decorative elements */}
         <div className="absolute top-20 right-10 w-64 h-64 border border-primary/10 rounded-full"></div>
         <div className="absolute bottom-10 left-10 w-48 h-48 border border-accent/10 rounded-full"></div>
 
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-block px-4 py-1.5 bg-primary/10 border border-primary/30 rounded-full mb-6">
-                <span className="text-primary text-sm font-semibold">
-                  Real-Time Security Intelligence
-                </span>
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-                CrowdCrawl
-              </h1>
-              <p className="text-xl sm:text-2xl text-text mb-8 font-light">
-                Real-time crowd density monitoring using computer vision.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* 
-                <Link
-                  to="/dashboard"
-                  className="px-8 py-4 bg-primary text-background rounded-lg font-bold text-lg hover:shadow-[0_0_30px_rgba(79,140,255,0.6)] hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  View Live Dashboard
-                  <ArrowRight size={20} />
-                </Link> 
-                */}
-                <a
-                  href="#architecture"
-                  className="px-8 py-4 border-2 border-border text-text rounded-lg font-bold text-lg hover:border-primary hover:shadow-[0_0_20px_rgba(79,140,255,0.3)] transition-all duration-300 flex items-center justify-center"
-                >
-                  System Architecture
-                </a>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="aspect-video bg-gradient-to-br from-border/50 to-background border-2 border-border rounded-2xl overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-[0_0_40px_rgba(79,140,255,0.2)] relative group">
-                {/* Corner accents */}
-                <div className="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-primary/30 rounded-tl-2xl"></div>
-                <div className="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-accent/30 rounded-br-2xl"></div>
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="inline-block px-4 py-1.5 bg-primary/10 border border-primary/30 rounded-full mb-8">
+            <span className="text-primary text-sm font-semibold">
+              Real-Time Security Intelligence
+            </span>
+          </div>
 
-                {/* Animated scan line */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse"></div>
-                </div>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-5 mb-6">
+            <img
+              src={LOGO_SRC}
+              alt="CrowdCrawl logo"
+              className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 object-contain drop-shadow-[0_0_28px_rgba(79,140,255,0.45)]"
+            />
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold leading-tight text-primary">
+              CrowdCrawl
+            </h1>
+          </div>
 
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <Camera
-                      size={64}
-                      className="mx-auto mb-4 text-primary/40 animate-pulse"
-                    />
-                    <p className="text-secondary text-sm">
-                      Live Heatmap Demo Screenshot
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-primary/20 rounded-full blur-3xl animate-pulse"></div>
-              <div
-                className="absolute -top-4 -left-4 w-32 h-32 bg-accent/20 rounded-full blur-3xl animate-pulse"
-                style={{ animationDelay: "1s" }}
-              ></div>
+          <p className="max-w-3xl mx-auto text-xl sm:text-2xl text-text mb-10 font-light">
+            Real-time crowd density monitoring using computer vision.
+          </p>
 
-              {/* Floating decorative elements */}
-              <div className="absolute top-10 -right-6 w-12 h-12 border border-primary/20 rounded-lg rotate-12 hover:rotate-45 transition-transform duration-500"></div>
-              <div className="absolute bottom-10 -left-6 w-10 h-10 border border-accent/20 rounded-full hover:scale-125 transition-transform duration-500"></div>
-            </div>
+          <div className="flex justify-center">
+            <a
+              href="#architecture"
+              className="px-8 py-4 border-2 border-border text-text rounded-lg font-bold text-lg hover:border-primary hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(79,140,255,0.3)] transition-all duration-300 flex items-center justify-center"
+            >
+              System Architecture
+            </a>
           </div>
         </div>
       </section>
@@ -534,11 +500,16 @@ function LandingPage() {
       <footer className="border-t border-border/50 py-12 px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col items-center mb-8">
-            <div className="text-2xl font-bold text-primary mb-2">
-              CrowdCrawl
+            <div className="flex items-center justify-center gap-3 text-2xl font-bold text-primary mb-2">
+              <img
+                src={LOGO_SRC}
+                alt="CrowdCrawl logo"
+                className="h-10 w-10 object-contain"
+              />
+              <span>CrowdCrawl</span>
             </div>
             <p className="text-secondary text-sm mb-6">
-              CodeVerse 3.0 Hackathon
+              Real-Time Crowd Monitoring Solution
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <span className="px-4 py-2 bg-background/80 border border-border rounded-lg text-xs font-semibold text-text hover:border-primary/50 transition-all duration-300">

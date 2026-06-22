@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Settings, Grid3x3, MapPin, Save, Trash2, Plus, AlertCircle } from "lucide-react";
+import {
+  Settings,
+  Grid3x3,
+  MapPin,
+  Save,
+  Trash2,
+  Plus,
+  AlertCircle,
+} from "lucide-react";
 import VenueSelector from "../components/VenueSelector";
 import ZoneDefinition from "../components/ZoneDefinition";
 import ZoneList from "../components/ZoneList";
@@ -15,7 +23,7 @@ const MOCK_VENUES = [
   {
     _id: "1",
     camera_id: "CAM001",
-    name: "CodeVerse Main Hall",
+    name: "Main Hall",
     status: "active",
     frame_width: 1280,
     frame_height: 720,
@@ -55,7 +63,7 @@ const MOCK_VENUES = [
 ];
 
 const MOCK_ZONES = {
-  "1": [
+  1: [
     {
       _id: "z1",
       name: "Stage Area",
@@ -73,7 +81,7 @@ const MOCK_ZONES = {
       },
     },
   ],
-  "2": [
+  2: [
     {
       _id: "z3",
       name: "Presentation Area",
@@ -83,8 +91,8 @@ const MOCK_ZONES = {
       },
     },
   ],
-  "3": [],
-  "4": [],
+  3: [],
+  4: [],
 };
 
 function AdminDashboardPage() {
@@ -98,12 +106,12 @@ function AdminDashboardPage() {
   // Zustand stores
   const { user } = useAuthStore();
   const { venues, fetchVenues, isLoading: venuesLoading } = useVenueStore();
-  const { 
-    zones, 
-    fetchZonesByVenue, 
-    createZone, 
+  const {
+    zones,
+    fetchZonesByVenue,
+    createZone,
     deleteZone,
-    isLoading: zonesLoading 
+    isLoading: zonesLoading,
   } = useZoneStore();
 
   // Check if user is admin
@@ -145,7 +153,7 @@ function AdminDashboardPage() {
     };
 
     const result = await createZone(selectedVenue._id, zoneData);
-    
+
     if (result.success) {
       setSuccess("Zone saved successfully!");
       setCurrentZoneName("");
@@ -163,7 +171,7 @@ function AdminDashboardPage() {
     }
 
     const result = await deleteZone(selectedVenue._id, zoneId);
-    
+
     if (result.success) {
       setSuccess("Zone deleted successfully!");
       setTimeout(() => setSuccess(null), 3000);
@@ -184,7 +192,9 @@ function AdminDashboardPage() {
                 <Settings className="text-accent" size={32} />
                 Admin Dashboard
               </h1>
-              <p className="text-secondary">Define and manage zones for your venues</p>
+              <p className="text-secondary">
+                Define and manage zones for your venues
+              </p>
             </div>
             <UserMenu />
           </div>
@@ -238,7 +248,9 @@ function AdminDashboardPage() {
 
                 {isDefiningZone && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium mb-2">Zone Name</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Zone Name
+                    </label>
                     <input
                       type="text"
                       value={currentZoneName}
@@ -251,7 +263,11 @@ function AdminDashboardPage() {
 
                 <ZoneDefinition
                   venue={selectedVenue}
-                  zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
+                  zones={
+                    zones && zones.length > 0
+                      ? zones
+                      : MOCK_ZONES[selectedVenue._id] || []
+                  }
                   isDefiningZone={isDefiningZone}
                   onSaveZone={handleSaveZone}
                   onCancelDefine={() => {
@@ -271,7 +287,11 @@ function AdminDashboardPage() {
                   Defined Zones ({(zones && zones.length) || 0})
                 </h2>
                 <ZoneList
-                  zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
+                  zones={
+                    zones && zones.length > 0
+                      ? zones
+                      : MOCK_ZONES[selectedVenue._id] || []
+                  }
                   onDeleteZone={handleDeleteZone}
                   loading={zonesLoading}
                 />
@@ -285,7 +305,11 @@ function AdminDashboardPage() {
           <div className="mt-6">
             <ThresholdManager
               venue={selectedVenue}
-              zones={zones && zones.length > 0 ? zones : MOCK_ZONES[selectedVenue._id] || []}
+              zones={
+                zones && zones.length > 0
+                  ? zones
+                  : MOCK_ZONES[selectedVenue._id] || []
+              }
             />
           </div>
         )}
@@ -293,7 +317,9 @@ function AdminDashboardPage() {
         {!selectedVenue && !venuesLoading && (
           <div className="text-center py-12 bg-surface rounded-lg border border-primary/20">
             <Grid3x3 className="mx-auto text-secondary mb-4" size={48} />
-            <p className="text-secondary text-lg">Select a venue to start defining zones</p>
+            <p className="text-secondary text-lg">
+              Select a venue to start defining zones
+            </p>
           </div>
         )}
       </div>
